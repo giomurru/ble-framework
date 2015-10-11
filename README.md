@@ -1,1 +1,2 @@
-# BLEFramework
+BLE framework is a Unity library that you can use to easily manage the Bluetooth communication between your mobile device and a BLE module such as ReadBearLab BLE Mini.
+The ReadBearLab BLE mini can be attached to a micro controller such as Arduino to allow simple wireless serial communication with your mobile device.
