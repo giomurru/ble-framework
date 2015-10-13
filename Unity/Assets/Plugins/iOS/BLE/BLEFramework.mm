@@ -1,6 +1,12 @@
 #import "BLE.h"
 #import "BLEFramework.h"
 
+NSString *const BLEUnityMessageName_OnBleDidInitialize = @"OnBleDidInitialize";
+NSString *const BLEUnityMessageName_OnBleDidConnect = @"OnBleDidConnect";
+NSString *const BLEUnityMessageName_OnBleDidCompletePeripheralScan = @"OnBleDidCompletePeripheralScan";
+NSString *const BLEUnityMessageName_OnBleDidDisconnect = @"OnBleDidDisconnect";
+NSString *const BLEUnityMessageName_OnBleDidReceiveData = @"OnBleDidReceiveData";
+
 @interface BLEFrameworkDelegate() <BLEDelegate>
 //@property (nonatomic, strong) NSString *rssiValue;
 @end
@@ -17,9 +23,22 @@
     if (self)
     {
         ble = [[BLE alloc] init];
-        [ble controlSetup];
-        ble.delegate = self;
-        self.mDevices = [[NSMutableArray alloc] init];
+        
+        if (ble)
+        {
+            [ble controlSetup];
+            ble.delegate = self;
+            self.mDevices = [[NSMutableArray alloc] init];
+            [BLEFrameworkDelegate SendUnityMessage:BLEUnityMessageName_OnBleDidInitialize message:@"Success"];
+        }
+        else
+        {
+            [BLEFrameworkDelegate SendUnityMessage:BLEUnityMessageName_OnBleDidInitialize message:@"Fail"];
+        }
+    }
+    else
+    {
+        [BLEFrameworkDelegate SendUnityMessage:BLEUnityMessageName_OnBleDidInitialize message:@"Fail"];
     }
     
     return self;
@@ -39,6 +58,8 @@
     NSData *data = [[NSData alloc] initWithBytes:buf length:3];
     [ble write:data];
     
+    [BLEFrameworkDelegate SendUnityMessage:BLEUnityMessageName_OnBleDidConnect message:@"Success"];
+    
     // Schedule to read RSSI every 1 sec.
     //rssiTimer = [NSTimer scheduledTimerWithTimeInterval:(float)1.0 target:self selector:@selector(readRSSITimer:) userInfo:nil repeats:YES];
 }
@@ -46,6 +67,9 @@
 - (void)bleDidDisconnect
 {
     self.isConnected = false;
+    
+    [BLEFrameworkDelegate SendUnityMessage:BLEUnityMessageName_OnBleDidDisconnect message:@"Success"];
+
     
     //[rssiTimer invalidate];
 }
@@ -59,10 +83,12 @@
 {
     NSLog(@"Length: %d", length);
     
-    // parse data, all commands are in 3-byte
-    for (int i = 0; i < length; i+=3)
+    // parse data, all commands must be in 3-byte, ignore data that is not such that
+    if (length == 3)
     {
-        NSLog(@"0x%02X, 0x%02X, 0x%02X", data[i], data[i+1], data[i+2]);
+        //NSLog(@"0x%02X, 0x%02X, 0x%02X", data[i], data[i+1], data[i+2]);
+        NSArray *values = [NSArray arrayWithObjects:[NSNumber numberWithUnsignedChar:data[0]], [NSNumber numberWithUnsignedChar:data[1]], [NSNumber numberWithUnsignedChar:data[2]], nil];
+        [BLEFrameworkDelegate SendUnityMessage:BLEUnityMessageName_OnBleDidReceiveData arrayValuesToPass:values];
     }
 }
 
@@ -108,19 +134,53 @@
                 [self.mDevices insertObject:@"UUID is NULL" atIndex:i];
             }
         }
+        
+        [BLEFrameworkDelegate SendUnityMessage:BLEUnityMessageName_OnBleDidCompletePeripheralScan arrayValuesToPass:self.mDevices];
+
     }
     else
     {
         NSLog(@"No peripherals found");
         [self.mDevices removeAllObjects];
-        
+        [BLEFrameworkDelegate SendUnityMessage:BLEUnityMessageName_OnBleDidCompletePeripheralScan message:@"0"];
     }
+    
+    
     self.searchDevicesDidFinish = true;
 }
 
-- (void)connectToDeviceAtIndex:(NSUInteger)index
+- (bool)connectPeripheral:(NSString *)peripheralID
 {
-    [ble connectPeripheral:[ble.peripherals objectAtIndex:index]];
+    CBPeripheral *selectedPeripheral;
+    for (CBPeripheral *p in ble.peripherals)
+    {
+        if ([p.identifier.UUIDString isEqualToString:peripheralID])
+        {
+            selectedPeripheral = p;
+        }
+    }
+    
+    if (selectedPeripheral != nil)
+    {
+        [ble connectPeripheral:selectedPeripheral];
+        return true;
+    }
+    
+    return false;
+}
+- (bool)connectPeripheralAtIndex:(NSUInteger)index
+{
+    if (index >= ble.peripherals.count)
+    {
+        return false;
+    }
+    else if ([ble.peripherals objectAtIndex:index]!=nil)
+    {
+        [ble connectPeripheral:[ble.peripherals objectAtIndex:index]];
+        return true;
+    }
+    
+    return false;
 }
 
 - (void)sendDataToPeripheral:(UInt8 *)buf
@@ -136,13 +196,11 @@
 +(void)SendUnityMessage:(NSString*)functionName arrayValuesToPass:(NSArray*)arrayValues
 {
 #ifdef UNITY_VERSION
-    
     NSError *error;
-    NSData *arrayData = [NSJSONSerialization dataWithJSONObject:arrayValues options:NSJSONWritingPrettyPrinted error:&error];
-    NSString* jsonArrayValues = [NSString stringWithCString:(const char *)[arrayData bytes] encoding:NSUTF8StringEncoding];
-    
-    UnitySendMessage(strdup([@"BLEController" UTF8String]), strdup([functionName UTF8String]), strdup([jsonArrayValues UTF8String]));
-    
+    NSDictionary *jsonObjectToSerialize = [NSDictionary dictionaryWithObject:arrayValues forKey:@"data"];
+    NSData *dictionaryData = [NSJSONSerialization dataWithJSONObject:jsonObjectToSerialize options:NSJSONWritingPrettyPrinted error:&error];
+    NSString* jsonArrayValues = [NSString stringWithCString:(const char *)[dictionaryData bytes] encoding:NSUTF8StringEncoding];
+    UnitySendMessage(strdup([@"BLEControllerEventHandler" UTF8String]), strdup([functionName UTF8String]), strdup([jsonArrayValues UTF8String]));
 #endif
 }
 
@@ -150,7 +208,7 @@
 {
     
 #ifdef UNITY_VERSION
-    UnitySendMessage(strdup([@"BLEController" UTF8String]), strdup([functionName UTF8String]), strdup([message UTF8String]));
+    UnitySendMessage(strdup([@"BLEControllerEventHandler" UTF8String]), strdup([functionName UTF8String]), strdup([message UTF8String]));
     
 #endif
 }
@@ -220,9 +278,14 @@ extern "C" {
         return NULL;
     }
     
-    void _ConnectToDevice(int device)
+    bool _ConnectPeripheral(NSString * peripheralID)
     {
-        [delegateObject connectToDeviceAtIndex:(NSUInteger)device];
+        return [delegateObject connectPeripheral:peripheralID];
+    }
+    
+    bool _ConnectPeripheralAtIndex(int device)
+    {
+        return [delegateObject connectPeripheralAtIndex:(NSUInteger)device];
     }
     
     void _SendData (char *buffer)

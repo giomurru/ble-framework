@@ -27,7 +27,7 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace BLE.MiniJSON
+namespace BLEFramework.MiniJSON
 {
 	using System;
 	using System.Collections;
