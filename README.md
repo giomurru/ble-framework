@@ -7,9 +7,13 @@ If you want to modify the plugin or study the source code, please continue readi
 
 Android plugin it is in binary form and it is compressed in a jar file. The project to generate the Android plugin is contained inside the folder AndroidPlugin.
 To generate the plugin launch this command inside the AndroidPlugin folder:
+
 `ant jar`
+
 Then, copy the generated `BleFrameworkPlugin.jar` file inside the `Unity/Assets/Plugins/Android` folder.
+
 `cp bin/BleFrameworkPlugin.jar ../Unity/Assets/Plugins/Android`
+
 Finally you can build the project in Unity for Android.
 
 As regard iOS you can find the plugin source code inside the folder Unity/Assets/Plugins/iOS. In this case you don't need to create a binary. If you want to modify the plugin you can just modify the source code in this folder.
