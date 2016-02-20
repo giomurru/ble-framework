@@ -34,3 +34,5 @@ Thumbs.db
 # Added by me  #
 # ============ #
 Unity/Export/
+AndroidPlugin/gen/
+AndroidPlugin/bin/
