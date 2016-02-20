@@ -39,12 +39,6 @@
 		public static event OnBleDidCompletePeripheralScanErrorEventDelegate OnBleDidCompletePeripheralScanErrorEvent;
 		
 		
-		/*
-		NSString *const BLEUnityMessageName_OnBleDidInitialize = @"OnBleDidInitialize";
-		NSString *const BLEUnityMessageName_OnBleDidConnect = @"OnBleDidConnect";
-		NSString *const BLEUnityMessageName_OnBleDidDisconnect = @"OnBleDidDisconnect";
-		NSString *const BLEUnityMessageName_OnBleDidReceiveData = @"OnBleDidReceiveData";
-		*/
 		
 		void OnBleDidInitialize(string message)
 		{

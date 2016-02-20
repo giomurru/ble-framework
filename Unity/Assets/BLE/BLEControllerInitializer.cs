@@ -25,9 +25,14 @@
 		
 		void Start()
 		{
-				BLEController.InitBLEFramework();
+				
 		}
 		
+		
+		public void InitBLEFramework()
+		{
+			BLEController.InitBLEFramework();
+		}
 		
 		void OnEnable()
 		{
@@ -41,7 +46,7 @@
 		}
 		void HandleOnBleDidInitializeEvent ()
 		{
-			Debug.Log ("BLEControllerInitializer: HandleOnBleDidInitializeEvent: BLE framework succesful initialization");
+			Debug.Log ("BLEControllerInitializer: HandleOnBleDidInitializeEvent: BLE framework successful initialization");
 		}
 		
 		void OnDisable()

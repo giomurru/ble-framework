@@ -18,7 +18,7 @@ public class AppControllerBehaviour : MonoBehaviour
 	
 	public GameObject searchBleDevicesListResult;
 	public GameObject searchBleDevicesButton;
-	
+	public GameObject infoMessage;
 	void Awake()
 	{
 		searchBleDevicesButton.GetComponent<Button>().enabled = false;
@@ -26,6 +26,21 @@ public class AppControllerBehaviour : MonoBehaviour
 	
 	void Start () 
 	{
+		StartCoroutine(InitializeBLEFramework());
+		//bool value = BLEController.IsDeviceConnected();
+		//infoMessage.GetComponent<Text>().text = "Device is connected = "+value;
+	}
+	
+	IEnumerator InitializeBLEFramework()
+	{
+		//wait for BLEControllerInitializer to Awake
+		while (BLEControllerInitializer.Instance == null)
+		{
+			yield return null;
+		}
+		//Init BLEFramework
+		infoMessage.GetComponent<Text>().text = "Calling InitBLEFramework";
+		BLEControllerInitializer.Instance.InitBLEFramework();
 	}
 	
 	void DestroyActivityIndicator()
@@ -58,7 +73,7 @@ public class AppControllerBehaviour : MonoBehaviour
 		searchBleDevicesButton.GetComponent<Button>().enabled = true;
 	}
 
-	void HandleBleDevicesListButtonConnectEvent (uint buttonIndex)
+	void HandleBleDevicesListButtonConnectEvent (int buttonIndex)
 	{
 		Debug.Log ("AppControllerBehavior: HandleBleDevicesListButtonConnectEvent: Calling connect peripheral at index");
 		bool result = BLEController.ConnectPeripheralAtIndex(buttonIndex);
@@ -75,12 +90,17 @@ public class AppControllerBehaviour : MonoBehaviour
 
 	void HandleOnBleDidInitializeErrorEvent (string errorMessage)
 	{
+		infoMessage.GetComponent<Text>().text = "BleFramework initialization: " + errorMessage;
+		
 		searchBleDevicesButton.GetComponent<Button>().enabled = false;
 		Debug.Log ("AppControllerBehavior: HandleOnBleDidInitializeErrorEvent: Error Message: " + errorMessage);
 	}
 
 	void HandleOnBleDidInitializeEvent ()
 	{
+		infoMessage.GetComponent<Text>().text = "BleFramework initialization: SUCCESS";
+		
+		Debug.Log("AppControllerBehavior: HandleOnBleDidInitializeEvent: The BLE module did initialize correctly");
 		searchBleDevicesButton.GetComponent<Button>().enabled = true;
 	}
 

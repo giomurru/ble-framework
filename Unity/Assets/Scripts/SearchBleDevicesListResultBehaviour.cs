@@ -77,7 +77,7 @@ public class SearchBleDevicesListResultBehaviour : MonoBehaviour {
 	{		
 		infoMessage.SetActive(false);
 		
-		uint j = 0;
+		int j = 0;
 		
 		foreach (string s in peripherals)
 		{

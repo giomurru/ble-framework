@@ -168,7 +168,7 @@ NSString *const BLEUnityMessageName_OnBleDidReceiveData = @"OnBleDidReceiveData"
     
     return false;
 }
-- (bool)connectPeripheralAtIndex:(NSUInteger)index
+- (bool)connectPeripheralAtIndex:(NSInteger)index
 {
     if (index >= ble.peripherals.count)
     {
@@ -285,7 +285,7 @@ extern "C" {
     
     bool _ConnectPeripheralAtIndex(int device)
     {
-        return [delegateObject connectPeripheralAtIndex:(NSUInteger)device];
+        return [delegateObject connectPeripheralAtIndex:(NSInteger)device];
     }
     
     void _SendData (char *buffer)
