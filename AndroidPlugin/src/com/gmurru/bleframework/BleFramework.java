@@ -18,45 +18,88 @@ import com.unity3d.player.UnityPlayer;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattService;
 import org.json.JSONObject;
 import org.json.JSONArray;
 import org.json.JSONException;
-//import android.os.ParcelUuid;
 import android.bluetooth.BluetoothManager;
 import android.app.Activity;
 
 public class BleFramework
 {
-    private static volatile BleFramework instance;
-	private Context context;
-
+    /*
+    Definition of the BLE Unity message methods used to communicate back with Unity. 
+    */
     public static final String BLEUnityMessageName_OnBleDidInitialize = "OnBleDidInitialize";
     public static final String BLEUnityMessageName_OnBleDidConnect = "OnBleDidConnect";
     public static final String BLEUnityMessageName_OnBleDidCompletePeripheralScan = "OnBleDidCompletePeripheralScan";
     public static final String BLEUnityMessageName_OnBleDidDisconnect = "OnBleDidDisconnect";
     public static final String BLEUnityMessageName_OnBleDidReceiveData = "OnBleDidReceiveData";
 
-    private final static String TAG = BleFramework.class.getSimpleName();
+    /*
+    Singleton instance.
+    */
+    private static volatile BleFramework _instance;
 
-    private RBLService mBluetoothLeService;
-    private BluetoothAdapter mBluetoothAdapter;
-    public static List<BluetoothDevice> mDevice = new ArrayList<BluetoothDevice>();
+    /*
+    The context represents the Unity native activity that is actually running.
+    */
+	private Context _context;
 
+    /*
+    Static variables 
+    */
+    private static final String TAG = BleFramework.class.getSimpleName();
     private static final int REQUEST_ENABLE_BT = 1;
     private static final long SCAN_PERIOD = 3000;
     public static final int REQUEST_CODE = 30;
-    private String mDeviceAddress;
-    private String mDeviceName;
-    private boolean flag = true;
-    private boolean connState = false;
 
-    private final ServiceConnection mServiceConnection = new ServiceConnection() 
+    /*
+    Static list contained all the discovered bluetooth devices
+    */
+    private static List<BluetoothDevice> _mDevice = new ArrayList<BluetoothDevice>();
+
+    /*
+    The characteristic used to transmit data
+    */
+    private BluetoothGattCharacteristic _characteristicTx = null;
+    /*
+    The latest received data
+    */
+    private byte[] _dataRx;
+
+    /*
+    Bluetooth service 
+    */
+    private RBLService _mBluetoothLeService;
+    /*
+    Bluetooth adapter
+    */
+    private BluetoothAdapter _mBluetoothAdapter;
+
+    /*
+    Bluetooth device address and name to which the app is currently connected
+    */
+    private String _mDeviceAddress;
+    private String _mDeviceName;
+
+    /*
+    Boolean variables used to estabilish the status of the connection
+    */
+    private boolean _flag = true;
+    private boolean _connState = false;
+
+    /*
+    The service connection containing the actions definition onServiceConnected and onServiceDisconnected
+    */
+    private final ServiceConnection _mServiceConnection = new ServiceConnection() 
     {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder service) 
         {
-            mBluetoothLeService = ((RBLService.LocalBinder) service).getService();
-            if (!mBluetoothLeService.initialize()) 
+            _mBluetoothLeService = ((RBLService.LocalBinder) service).getService();
+            if (!_mBluetoothLeService.initialize()) 
             {
                 Log.e(TAG, "onServiceConnected: Unable to initialize Bluetooth");
             }
@@ -70,16 +113,19 @@ public class BleFramework
         public void onServiceDisconnected(ComponentName componentName) 
         {
             Log.d(TAG, "onServiceDisconnected: Bluetooth disconnected");
-            mBluetoothLeService = null;
+            _mBluetoothLeService = null;
         }
     };
 
-    private BluetoothAdapter.LeScanCallback mLeScanCallback = new BluetoothAdapter.LeScanCallback() 
+    /*
+    Callback called when the scan of bluetooth devices is finished
+    */
+    private BluetoothAdapter.LeScanCallback _mLeScanCallback = new BluetoothAdapter.LeScanCallback() 
     {
         @Override
         public void onLeScan(final BluetoothDevice device, final int rssi, byte[] scanRecord) 
         {
-            Activity activity = (Activity) context;
+            Activity activity = (Activity) _context;
             activity.runOnUiThread(new Runnable() {
                 @Override
                 public void run() 
@@ -88,10 +134,10 @@ public class BleFramework
                     if (device != null) 
                     {
                         Log.d(TAG, "onLeScan: device is not null");
-                        if (mDevice.indexOf(device) == -1)
+                        if (_mDevice.indexOf(device) == -1)
                         {
-                            Log.d(TAG, "onLeScan: add device to mDevice");
-                            mDevice.add(device);
+                            Log.d(TAG, "onLeScan: add device to _mDevice");
+                            _mDevice.add(device);
                         }
                     }
                     else
@@ -103,15 +149,104 @@ public class BleFramework
         }
     };
 
+    
+
+    /*
+    Callback called when the bluetooth device receive relevant updates about connection, disconnection, service discovery, data available, rssi update
+    */
+    private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+
+            if (RBLService.ACTION_GATT_CONNECTED.equals(action)) {
+                _flag = true;
+                _connState = true;
+
+                //send the reset signal to the robot
+                byte buf[] = new byte[] { (byte) 0x04, (byte) 0x00, (byte) 0x00 };
+                _characteristicTx.setValue(buf);
+                _mBluetoothLeService.writeCharacteristic(_characteristicTx);
+
+                UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidConnect, "Success");
+
+                Log.d(TAG, "Connection estabilished with: " + _mDeviceAddress);
+                startReadRssi();
+            } 
+            else if (RBLService.ACTION_GATT_DISCONNECTED.equals(action)) 
+            {
+                _flag = false;
+                _connState = false;
+
+                UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidDisconnect, "Success");
+
+                Log.d(TAG, "Connection lost");
+            } 
+            else if (RBLService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) 
+            {
+                getGattService(_mBluetoothLeService.getSupportedGattService());
+            } 
+            else if (RBLService.ACTION_DATA_AVAILABLE.equals(action)) 
+            {
+                _dataRx = intent.getByteArrayExtra(RBLService.EXTRA_DATA);
+
+                UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidReceiveData, "3");
+            }
+            else if (RBLService.ACTION_GATT_RSSI.equals(action)) 
+            {
+                String rssiData = intent.getStringExtra(RBLService.EXTRA_DATA);
+                Log.d(TAG, "RSSI: " + rssiData);
+            }
+        }
+    };
+
+    /*
+    METHODS DEFINITION
+    */
+
+    /*
+    Method used to create a filter for the bluetooth actions that you like to receive
+    */
+    private static IntentFilter makeGattUpdateIntentFilter() 
+    {
+        final IntentFilter intentFilter = new IntentFilter();
+
+        intentFilter.addAction(RBLService.ACTION_GATT_CONNECTED);
+        intentFilter.addAction(RBLService.ACTION_GATT_DISCONNECTED);
+        intentFilter.addAction(RBLService.ACTION_GATT_SERVICES_DISCOVERED);
+        intentFilter.addAction(RBLService.ACTION_DATA_AVAILABLE);
+        intentFilter.addAction(RBLService.ACTION_GATT_RSSI);
+
+        return intentFilter;
+    }
+
+    /*
+    Method used to start receiving updates for bluetooth actions and filter them
+    */
+    private void RegisterGattUpdateReceiver()
+    {
+        Activity activity = (Activity) _context;
+        if (!_mBluetoothAdapter.isEnabled()) 
+        {
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            activity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+        }
+
+        activity.registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
+    }
+
+    /*
+    Start reading RSSI: information about bluetooth signal intensity
+    */
     private void startReadRssi() 
     {
         new Thread() 
         {
             public void run() 
             {
-                while (flag) 
+                while (_flag) 
                 {
-                    mBluetoothLeService.readRssi();
+                    _mBluetoothLeService.readRssi();
                     try 
                     {
                         sleep(500);
@@ -125,60 +260,25 @@ public class BleFramework
         }.start();
     }
 
-    private final BroadcastReceiver mGattUpdateReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            final String action = intent.getAction();
-
-            if (RBLService.ACTION_GATT_CONNECTED.equals(action)) {
-                flag = true;
-                connState = true;
-
-                UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidConnect, "Success");
-
-                Log.d(TAG, "Connection estabilished with: " + mDeviceAddress);
-                startReadRssi();
-            } 
-            else if (RBLService.ACTION_GATT_DISCONNECTED.equals(action)) 
-            {
-                flag = false;
-                connState = false;
-
-                UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidDisconnect, "Success");
-
-                Log.d(TAG, "Connection lost");
-            } 
-            else if (RBLService.ACTION_GATT_RSSI.equals(action)) 
-            {
-                String rssiData = intent.getStringExtra(RBLService.EXTRA_DATA);
-                Log.d(TAG, "RSSI: " + rssiData);
-            }
-        }
-    };
-
-    private static IntentFilter makeGattUpdateIntentFilter() 
+    /*
+    Method used to initialize the characteristic for data transmission
+    */
+    private void getGattService(BluetoothGattService gattService) 
     {
-        final IntentFilter intentFilter = new IntentFilter();
+        if (gattService == null)
+            return;
 
-        intentFilter.addAction(RBLService.ACTION_GATT_CONNECTED);
-        intentFilter.addAction(RBLService.ACTION_GATT_DISCONNECTED);
-        intentFilter.addAction(RBLService.ACTION_GATT_RSSI);
+        _characteristicTx = gattService.getCharacteristic(RBLService.UUID_BLE_SHIELD_TX);
 
-        return intentFilter;
+        BluetoothGattCharacteristic characteristicRx = gattService.getCharacteristic(RBLService.UUID_BLE_SHIELD_RX);
+        _mBluetoothLeService.setCharacteristicNotification(characteristicRx,true);
+        _mBluetoothLeService.readCharacteristic(characteristicRx);
     }
 
-    private void RegisterGattUpdateReceiver()
-    {
-        Activity activity = (Activity) context;
-        if (!mBluetoothAdapter.isEnabled()) 
-        {
-            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            activity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
-        }
-
-        activity.registerReceiver(mGattUpdateReceiver, makeGattUpdateIntentFilter());
-    }
-
+    
+    /*
+    Method used to scan for available bluetooth low energy devices
+    */
     private void scanLeDevice() 
     {
         new Thread() 
@@ -188,15 +288,15 @@ public class BleFramework
             public void run() 
             {
 
-                if (mBluetoothAdapter == null) 
+                if (_mBluetoothAdapter == null) 
                 {
-                    Log.e(TAG, "scanLeDevice: Abort mBluetoothAdapter is null");
+                    Log.e(TAG, "scanLeDevice: Abort _mBluetoothAdapter is null");
                     return;
                 }
                 else
                 {
-                    Log.d(TAG, "scanLeDevice: mBluetoothAdapter StartLeScan");
-                    mBluetoothAdapter.startLeScan(mLeScanCallback);
+                    Log.d(TAG, "scanLeDevice: _mBluetoothAdapter StartLeScan");
+                    _mBluetoothAdapter.startLeScan(_mLeScanCallback);
                 }
 
                 try 
@@ -210,10 +310,10 @@ public class BleFramework
                     e.printStackTrace();
                 }
 
-                Log.d(TAG, "scanLeDevice: mBluetoothAdapter StopLeScan");
-                mBluetoothAdapter.stopLeScan(mLeScanCallback);
+                Log.d(TAG, "scanLeDevice: _mBluetoothAdapter StopLeScan");
+                _mBluetoothAdapter.stopLeScan(_mLeScanCallback);
 
-                Log.d(TAG, "scanLeDevice: mDevice size is " + mDevice.size());
+                Log.d(TAG, "scanLeDevice: _mDevice size is " + _mDevice.size());
 
                 String mDeviceJson = _GetListOfDevices();
                 UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidCompletePeripheralScan, mDeviceJson);
@@ -222,55 +322,63 @@ public class BleFramework
     }
 
     
-
+    /*
+    Private Constructor. It is used by the getInstance method to create a singleton instance of BleFramework class.
+    */
     private BleFramework(Context context)
     {
         Log.d(TAG, "BleFramework: Singleton Creation");
-        this.context = context;
+        this._context = context;
     }
 
+    /*
+    Singleton initialization. Create an instance of BleFramework class only if it doesn't exist yet.
+    */
     public static BleFramework getInstance(Context context) 
     {
-        if (instance == null ) 
+        if (_instance == null ) 
         {
             synchronized (BleFramework.class) 
             {
-                if (instance == null) 
+                if (_instance == null) 
                 {
-                    Log.d(TAG, "BleFramework: Creation of instance");
-                    instance = new BleFramework(context);
+                    Log.d(TAG, "BleFramework: Creation of _instance");
+                    _instance = new BleFramework(context);
                 }
             }
         }
 
-        return instance;
+        return _instance;
     }
 
+    /*
+    Public methods that can be directly called by Unity
+    */
     public void _InitBLEFramework()
     {
         System.out.println("Android Executing: _InitBLEFramework");
 
-        if (!context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) 
+        if (!_context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)) 
         {
             Log.e(TAG,"_InitBLEFramework: FEATURE_BLUETOOTH_LE is not found");
             UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidInitialize, "Fail: FEATURE_BLUETOOTH_LE");
             return;
         }
 
-        Activity activity = (Activity) context;
+        Activity activity = (Activity) _context;
         final BluetoothManager mBluetoothManager = (BluetoothManager) activity.getSystemService(Context.BLUETOOTH_SERVICE);
-        mBluetoothAdapter = mBluetoothManager.getAdapter();
+        _mBluetoothAdapter = mBluetoothManager.getAdapter();
         
-        if (mBluetoothAdapter == null) 
+        if (_mBluetoothAdapter == null) 
         {
-            Log.e(TAG,"_InitBLEFramework: mBluetoothAdapter is null");
+            Log.e(TAG,"_InitBLEFramework: _mBluetoothAdapter is null");
             UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidInitialize, "Fail: Context.BLUETOOTH_SERVICE");
         }
         else
         {
-            Log.d(TAG,"_InitBLEFramework: mBluetoothAdapter found");
+            Log.d(TAG,"_InitBLEFramework: _mBluetoothAdapter found");
             Intent gattServiceIntent = new Intent(activity, RBLService.class);
-            activity.bindService(gattServiceIntent, mServiceConnection, activity.BIND_AUTO_CREATE);
+            activity.bindService(gattServiceIntent, _mServiceConnection, activity.BIND_AUTO_CREATE);
             RegisterGattUpdateReceiver();
             UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidInitialize, "Success");
         }
@@ -280,36 +388,23 @@ public class BleFramework
 
     public void _ScanForPeripherals()
     {
-        if (connState == false) 
+        if (_connState == false) 
         {
             Log.d(TAG, "_ScanForPeripherals: Launching scanLeDevice");
             scanLeDevice();
-
-            /*
-            try {
-                Thread.sleep(SCAN_PERIOD);
-            } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-
-            Activity activity = (Activity) context;
-            Intent intent = new Intent(context, Device.class);
-            activity.startActivityForResult(intent, REQUEST_CODE);
-            */
         } 
         else 
         {
             Log.d(TAG, "_ScanForPeripherals: Disconnect and close Ble service");
-            mBluetoothLeService.disconnect();
-            mBluetoothLeService.close();
+            _mBluetoothLeService.disconnect();
+            _mBluetoothLeService.close();
         }
     }
 
     public boolean _IsDeviceConnected()
     {
         Log.d(TAG,"_IsDeviceConnected");
-        return connState;
+        return _connState;
     }
 
     public boolean _SearchDeviceDidFinish()
@@ -322,15 +417,15 @@ public class BleFramework
     {
         String jsonListString;
 
-        if (mDevice.size() > 0)
+        if (_mDevice.size() > 0)
         {
             Log.d(TAG,"_GetListOfDevices");
-            String[] uuidsArray = new String[mDevice.size()];
+            String[] uuidsArray = new String[_mDevice.size()];
 
-            for (int i = 0; i < mDevice.size(); i++) 
+            for (int i = 0; i < _mDevice.size(); i++) 
             {
 
-                BluetoothDevice bd = mDevice.get(i);
+                BluetoothDevice bd = _mDevice.get(i);
                 /*
                 ParcelUuid[] puiids = bd.getUuids();
                 if (puuids!=null)
@@ -376,28 +471,34 @@ public class BleFramework
     public boolean _ConnectPeripheralAtIndex(int peripheralIndex)
     {
         Log.d(TAG,"_ConnectPeripheralAtIndex: " + peripheralIndex);
-        BluetoothDevice device = mDevice.get(peripheralIndex);
-        mDeviceAddress = device.getAddress();
-
-        return mBluetoothLeService.connect(mDeviceAddress);
+        BluetoothDevice device = _mDevice.get(peripheralIndex);
+        _mDeviceAddress = device.getAddress();
+        _mDeviceName = device.getName();
+        return _mBluetoothLeService.connect(_mDeviceAddress);
     }
 
     public boolean _ConnectPeripheral(String peripheralID)
     {
         Log.d(TAG,"_ConnectPeripheral: " + peripheralID);
 
-        for (BluetoothDevice device : mDevice)
+        for (BluetoothDevice device : _mDevice)
         {
             if (device.getAddress().equals(peripheralID)) 
             {
-                mDeviceAddress = device.getAddress();
-                return mBluetoothLeService.connect(mDeviceAddress);
+                _mDeviceAddress = device.getAddress();
+                _mDeviceName = device.getName();
+                return _mBluetoothLeService.connect(_mDeviceAddress);
             }
         }
              
         return false;
     }
 
+    public byte[] _GetData()
+    {
+        Log.d(TAG,"_GetData: ");
+        return _dataRx;
+    }
     public void _SendData(String data)
     {
         Log.d(TAG,"_SendData: " + data);
@@ -407,8 +508,8 @@ public class BleFramework
     {
         if (pause == true)
         {
-            flag = false;
-            Activity activity = (Activity) context;
+            _flag = false;
+            Activity activity = (Activity) _context;
             activity.unregisterReceiver(mGattUpdateReceiver);
         }
         else
@@ -416,36 +517,4 @@ public class BleFramework
             RegisterGattUpdateReceiver();
         }
     }
-
-    
-
-	// Return the battery level as a float between 0 and 1 (1 being fully charged, 0 fulled discharged)
-    /*
-    public float GetBatteryPct()
-    {
-    	Intent batteryStatus = GetBatteryStatusIntent();
-
-    	int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-		int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-
-		float batteryPct = level / (float)scale;
-		return batteryPct;
-    }
-
-    // Return whether or not we're currently on charge
-    public boolean IsBatteryCharging()
-    {
-    	Intent batteryStatus = GetBatteryStatusIntent();
-
-    	int status = batteryStatus.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
-    	return status == BatteryManager.BATTERY_STATUS_CHARGING || 
-    	       status == BatteryManager.BATTERY_STATUS_FULL;
-    }
-
-    private Intent GetBatteryStatusIntent()
-    {
- 		IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
-		return context.registerReceiver(null, ifilter);
-    }
-    */
 }
