@@ -16,12 +16,11 @@ extern NSString *const BLEUnityMessageName_OnBleDidReceiveData;
 - (void)scanForPeripherals;
 
 - (bool)connectPeripheral:(NSString *)peripheralID;
-- (bool)connectPeripheralAtIndex:(NSUInteger)index;
+- (bool)connectPeripheralAtIndex:(NSInteger)index;
 - (void)sendDataToPeripheral:(UInt8 *)buf;
 
-+(void)SendUnityMessage:(NSString*)functionName arrayValuesToPass:(NSArray*)arrayValues;
-+(void)SendUnityMessage:(NSString*)functionName message:(NSString*)message;
-
++ (void)SendUnityMessage:(NSString*)functionName arrayValuesToPass:(NSArray*)arrayValues;
++ (void)SendUnityMessage:(NSString*)functionName message:(NSString*)message;
 /* PROPERTIES AND METHODS OF THE IOS BLE FRAMEWORK
 @property (strong, nonatomic) NSMutableArray *peripherals;
 @property (strong, nonatomic) CBCentralManager *CM;

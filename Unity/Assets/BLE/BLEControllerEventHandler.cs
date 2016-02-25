@@ -16,7 +16,7 @@
 		public delegate void OnBleDidDisconnectEventDelegate();
 		public static event OnBleDidDisconnectEventDelegate OnBleDidDisconnectEvent;
 		
-		public delegate void OnBleDidReceiveDataEventDelegate(string message);
+		public delegate void OnBleDidReceiveDataEventDelegate(byte[] data, int numOfBytes);
 		public static event OnBleDidReceiveDataEventDelegate OnBleDidReceiveDataEvent;
 		
 		public delegate void OnBleDidInitializeEventDelegate();
@@ -87,25 +87,18 @@
 		
 		void OnBleDidReceiveData(string message)
 		{
-			Dictionary<string, object> dictObject = Json.Deserialize(message) as Dictionary<string, object>;
-			
-			object receivedByteDataArray;
-			List<object> receivedByteData = new List<object>();
-			if (dictObject.TryGetValue ("data", out receivedByteDataArray)) 
+			int numOfBytes = 0;
+			if (int.TryParse(message, out numOfBytes))
 			{
-				receivedByteData = (List<object>) receivedByteDataArray;
+				byte[] data = BLEController.GetData();
+
+				if (OnBleDidReceiveDataEvent!=null)
+				{
+					OnBleDidReceiveDataEvent(data, numOfBytes);
+				}
 			}
 			
-			string receivedByteDataMessage = "";
-			foreach (string s in receivedByteData)
-			{
-				receivedByteDataMessage = receivedByteDataMessage + " " +s;
-			}
-			
-			if (OnBleDidReceiveDataEvent!=null)
-			{
-				OnBleDidReceiveDataEvent(receivedByteDataMessage);
-			}
+
 		}
 		
 		void OnBleDidCompletePeripheralScan(string message)

@@ -61,6 +61,17 @@ public class AppControllerBehaviour : MonoBehaviour
 		BLEControllerEventHandler.OnBleDidInitializeErrorEvent += HandleOnBleDidInitializeErrorEvent;
 		BLEControllerEventHandler.OnBleDidConnectEvent += HandleOnBleDidConnectEvent;
 		BLEControllerEventHandler.OnBleDidDisconnectEvent += HandleOnBleDidDisconnectEvent;
+		BLEControllerEventHandler.OnBleDidReceiveDataEvent += HandleOnBleDidReceiveDataEvent;
+	}
+
+	void HandleOnBleDidReceiveDataEvent (byte[] data, int numOfBytes)
+	{
+		Debug.Log("AppControllerBehavior: HandleOnBleDidReceiveDataEvent: size: " + numOfBytes);
+
+		for (int j=0; j < numOfBytes; j++)
+		{
+			Debug.Log("Received " + j + " byte is: " + data[j]);
+		}
 	}
 
 	void HandleOnBleDidDisconnectEvent ()
@@ -71,6 +82,10 @@ public class AppControllerBehaviour : MonoBehaviour
 	void HandleOnBleDidConnectEvent ()
 	{
 		searchBleDevicesButton.GetComponent<Button>().enabled = true;
+
+		byte[] resetSignal = new byte[]{0xfe, 0xfe, 0xfe};
+
+		BLEController.SendData(resetSignal);
 	}
 
 	void HandleBleDevicesListButtonConnectEvent (int buttonIndex)
@@ -153,5 +168,6 @@ public class AppControllerBehaviour : MonoBehaviour
 		BLEControllerEventHandler.OnBleDidInitializeErrorEvent -= HandleOnBleDidInitializeErrorEvent;
 		BLEControllerEventHandler.OnBleDidConnectEvent -= HandleOnBleDidConnectEvent;
 		BLEControllerEventHandler.OnBleDidDisconnectEvent -= HandleOnBleDidDisconnectEvent;
+		BLEControllerEventHandler.OnBleDidReceiveDataEvent -= HandleOnBleDidReceiveDataEvent;
 	}
 }

@@ -32,7 +32,11 @@
 		private static extern bool _ConnectPeripheral(string peripheralID);
 		
 		[DllImport ("__Internal")]
-		private static extern void _SendData(string buffer);
+		private static extern void _SendData(byte[] buffer);
+
+		[DllImport ("__Internal")]
+		private static extern byte[] _GetData();
+
 		#endif
 		
 
@@ -49,6 +53,29 @@
 			#elif UNITY_ANDROID
 			if (Application.platform == RuntimePlatform.Android)
 	        {
+	        /*
+   				AndroidJavaClass ajc = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+   				AndroidJavaObject ajo = ajc.GetStatic<AndroidJavaObject>("currentActivity");
+ 
+   				var jc = new AndroidJavaClass("com.gmurru.bleframework.BleFrameworkManager");
+   				jc.CallStatic("launchActivity", ajo);
+   				*/
+   				/*
+				using (AndroidJavaClass javaUnityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+            	{
+					using (AndroidJavaObject currentActivity = javaUnityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
+	                {
+						using (AndroidJavaClass bleFrameworkManagerClass = new AndroidJavaClass("com.gmurru.bleframework.BleFrameworkManager"))
+						{
+							using (AndroidJavaObject androidPlugin = bleFrameworkManagerClass.CallStatic<AndroidJavaObject>("getInstance", currentActivity))
+	                    	{
+								androidPlugin.Call("launchActivity", currentActivity);
+							}
+	                    }
+	                }
+	            }
+	            */
+	        	
 				using (AndroidJavaClass javaUnityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
             	{
 					using (AndroidJavaObject currentActivity = javaUnityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
@@ -62,6 +89,21 @@
 	                    }
 	                }
 	            }
+	            /*
+	            using (AndroidJavaClass javaUnityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+	            {
+					using (AndroidJavaObject currentActivity = javaUnityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
+	                {
+						using (AndroidJavaClass bleFrameworkClass = new AndroidJavaClass("com.gmurru.bleframework.BleFramework"))
+						{
+							using (AndroidJavaObject androidPlugin = bleFrameworkClass.CallStatic<AndroidJavaObject>("getInstance", currentActivity))
+	                    	{
+								isConnected=androidPlugin.Call<bool>("_IsDeviceConnected");
+							}
+	                    }
+	                }
+	            }
+	            */
 	        }
 			#endif
 		}
@@ -77,7 +119,7 @@
 			}
 			#elif UNITY_ANDROID
 			using (AndroidJavaClass javaUnityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
-            {
+        	{
 				using (AndroidJavaObject currentActivity = javaUnityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
                 {
 					using (AndroidJavaClass bleFrameworkClass = new AndroidJavaClass("com.gmurru.bleframework.BleFramework"))
@@ -103,8 +145,9 @@
 				isConnected = _IsDeviceConnected();
 			}
 			#elif UNITY_ANDROID
+
 			using (AndroidJavaClass javaUnityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
-            {
+        	{
 				using (AndroidJavaObject currentActivity = javaUnityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
                 {
 					using (AndroidJavaClass bleFrameworkClass = new AndroidJavaClass("com.gmurru.bleframework.BleFramework"))
@@ -112,6 +155,7 @@
 						using (AndroidJavaObject androidPlugin = bleFrameworkClass.CallStatic<AndroidJavaObject>("getInstance", currentActivity))
                     	{
 							isConnected=androidPlugin.Call<bool>("_IsDeviceConnected");
+
 						}
                     }
                 }
@@ -132,8 +176,9 @@
 				searchDevicesDidFinish = _SearchDevicesDidFinish();
 			}
 			#elif UNITY_ANDROID
+
 			using (AndroidJavaClass javaUnityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
-            {
+        	{
 				using (AndroidJavaObject currentActivity = javaUnityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
                 {
 					using (AndroidJavaClass bleFrameworkClass = new AndroidJavaClass("com.gmurru.bleframework.BleFramework"))
@@ -142,8 +187,8 @@
                     	{
 							searchDevicesDidFinish=androidPlugin.Call<bool>("_SearchDevicesDidFinish");
 						}
-                    }
-                }
+					}
+				}
             }
 			#endif
 			
@@ -162,7 +207,7 @@
 			}
 			#elif UNITY_ANDROID
 			using (AndroidJavaClass javaUnityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
-            {
+        	{
 				using (AndroidJavaObject currentActivity = javaUnityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
                 {
 					using (AndroidJavaClass bleFrameworkClass = new AndroidJavaClass("com.gmurru.bleframework.BleFramework"))
@@ -170,9 +215,9 @@
 						using (AndroidJavaObject androidPlugin = bleFrameworkClass.CallStatic<AndroidJavaObject>("getInstance", currentActivity))
                     	{
 							listOfDevices=androidPlugin.Call<string>("_GetListOfDevices");
-						}
-                    }
-                }
+						}	
+					}	
+				}
             }
 			#endif
 
@@ -191,17 +236,17 @@
 			}
 			#elif UNITY_ANDROID
 			using (AndroidJavaClass javaUnityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
-            {
+        	{
 				using (AndroidJavaObject currentActivity = javaUnityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
                 {
 					using (AndroidJavaClass bleFrameworkClass = new AndroidJavaClass("com.gmurru.bleframework.BleFramework"))
 					{
 						using (AndroidJavaObject androidPlugin = bleFrameworkClass.CallStatic<AndroidJavaObject>("getInstance", currentActivity))
                     	{
-							result=androidPlugin.Call<bool>("_ConnectPeripheralAtIndex",peripheralIndex);
-						}
-                    }
-                }
+            				result=androidPlugin.Call<bool>("_ConnectPeripheralAtIndex",peripheralIndex);
+            			}
+            		}
+            	}
             }
 			#endif
 			
@@ -220,7 +265,7 @@
 			}
 			#elif UNITY_ANDROID
 			using (AndroidJavaClass javaUnityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
-            {
+        	{
 				using (AndroidJavaObject currentActivity = javaUnityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
                 {
 					using (AndroidJavaClass bleFrameworkClass = new AndroidJavaClass("com.gmurru.bleframework.BleFramework"))
@@ -229,15 +274,44 @@
                     	{
 							result=androidPlugin.Call<bool>("_ConnectPeripheral",peripheralID);
 						}
-                    }
-                }
+					}
+				}
             }
 			#endif
 			
 			return result;
 		}
-		
-		public static void SendData(string data)
+
+		public static byte[] GetData()
+		{
+			byte[] result = new byte[3];
+			// We check for UNITY_IPHONE again so we don't try this if it isn't iOS platform.
+			#if UNITY_IPHONE
+			// Now we check that it's actually an iOS device/simulator, not the Unity Player. You only get plugins on the actual device or iOS Simulator.
+			if (Application.platform == RuntimePlatform.IPhonePlayer)
+			{
+				result = _GetData();
+			}
+			#elif UNITY_ANDROID
+			using (AndroidJavaClass javaUnityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+        	{
+				using (AndroidJavaObject currentActivity = javaUnityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
+                {
+					using (AndroidJavaClass bleFrameworkClass = new AndroidJavaClass("com.gmurru.bleframework.BleFramework"))
+					{
+						using (AndroidJavaObject androidPlugin = bleFrameworkClass.CallStatic<AndroidJavaObject>("getInstance", currentActivity))
+                    	{
+							result=androidPlugin.Call<byte[]>("_GetData");
+						}
+					}
+				}
+            }
+			#endif
+			
+			return result;
+		}
+
+		public static void SendData(byte[] data)
 		{
 			// We check for UNITY_IPHONE again so we don't try this if it isn't iOS platform.
 			#if UNITY_IPHONE
@@ -248,7 +322,7 @@
 			}
 			#elif UNITY_ANDROID
 			using (AndroidJavaClass javaUnityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
-            {
+        	{
 				using (AndroidJavaObject currentActivity = javaUnityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
                 {
 					using (AndroidJavaClass bleFrameworkClass = new AndroidJavaClass("com.gmurru.bleframework.BleFramework"))
@@ -256,9 +330,9 @@
 						using (AndroidJavaObject androidPlugin = bleFrameworkClass.CallStatic<AndroidJavaObject>("getInstance", currentActivity))
                     	{
 							androidPlugin.Call("_SendData",data);
-                    	}
-                    }
-                }
+						}
+					}
+				}
             }
 			#endif
 		}

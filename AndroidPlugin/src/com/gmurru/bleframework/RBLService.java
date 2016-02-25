@@ -324,6 +324,13 @@ public class RBLService extends Service {
 		}
 	}
 
+	/**
+	 * Retrieves a list of supported GATT services on the connected device. This
+	 * should be invoked only after {@code BluetoothGatt#discoverServices()}
+	 * completes successfully.
+	 * 
+	 * @return A {@code List} of supported services.
+	 */
 	public BluetoothGattService getSupportedGattService() {
 		if (mBluetoothGatt == null)
 			return null;

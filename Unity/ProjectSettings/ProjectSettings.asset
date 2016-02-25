@@ -9,7 +9,7 @@ PlayerSettings:
   targetDevice: 2
   useOnDemandResources: 0
   accelerometerFrequency: 60
-  companyName: DefaultCompany
+  companyName: gmurru
   productName: UnityBLE
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
@@ -97,7 +97,7 @@ PlayerSettings:
   xboxOneDisableKinectGpuReservation: 0
   virtualRealitySupported: 0
   productGUID: d2df1129ebbaf43658fc74e4d703e59b
-  AndroidBundleVersionCode: 31
+  AndroidBundleVersionCode: 77
   AndroidMinSdkVersion: 18
   AndroidPreferredInstallLocation: 1
   aotOptions: 
@@ -159,7 +159,7 @@ PlayerSettings:
   AndroidSplashScreenScale: 0
   androidSplashScreen: {fileID: 0}
   AndroidKeystoreName: /Users/Fenix/Developer/_MOBILE/Android/keystore/gmurru.keystore
-  AndroidKeyaliasName: 
+  AndroidKeyaliasName: gmurrukey
   AndroidTVCompatibility: 0
   AndroidIsGame: 0
   androidEnableBanner: 1

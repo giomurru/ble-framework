@@ -14,7 +14,13 @@ NSString *const BLEUnityMessageName_OnBleDidReceiveData = @"OnBleDidReceiveData"
 @implementation BLEFrameworkDelegate
 {
     BLE *ble;
+    unsigned char *dataRx;
     //NSTimer *rssiTimer;
+}
+
+- (unsigned char *)getDataRx
+{
+    return dataRx;
 }
 
 - (id) init
@@ -53,10 +59,12 @@ NSString *const BLEUnityMessageName_OnBleDidReceiveData = @"OnBleDidReceiveData"
     NSLog(@"->Connected");
     self.isConnected = true;
     
+    /*
     // send reset
-    UInt8 buf[] = {0x04, 0x00, 0x00};
+    UInt8 buf[] = {0xfe, 0xfe, 0xfe};
     NSData *data = [[NSData alloc] initWithBytes:buf length:3];
     [ble write:data];
+    */
     
     [BLEFrameworkDelegate SendUnityMessage:BLEUnityMessageName_OnBleDidConnect message:@"Success"];
     
@@ -74,22 +82,17 @@ NSString *const BLEUnityMessageName_OnBleDidReceiveData = @"OnBleDidReceiveData"
     //[rssiTimer invalidate];
 }
 
--(void)bleDidUpdateRSSI:(NSNumber *) rssi
+- (void)bleDidUpdateRSSI:(NSNumber *) rssi
 {
     //self.rssiValue = rssi.stringValue;
 }
 
--(void) bleDidReceiveData:(unsigned char *)data length:(int)length
+- (void) bleDidReceiveData:(unsigned char *)data length:(int)length
 {
-    NSLog(@"Length: %d", length);
+    NSLog(@"bleDidReceiveData length: %d", length);
     
-    // parse data, all commands must be in 3-byte, ignore data that is not such that
-    if (length == 3)
-    {
-        //NSLog(@"0x%02X, 0x%02X, 0x%02X", data[i], data[i+1], data[i+2]);
-        NSArray *values = [NSArray arrayWithObjects:[NSNumber numberWithUnsignedChar:data[0]], [NSNumber numberWithUnsignedChar:data[1]], [NSNumber numberWithUnsignedChar:data[2]], nil];
-        [BLEFrameworkDelegate SendUnityMessage:BLEUnityMessageName_OnBleDidReceiveData arrayValuesToPass:values];
-    }
+    dataRx = data;
+    [BLEFrameworkDelegate SendUnityMessage:BLEUnityMessageName_OnBleDidReceiveData message:[NSString stringWithFormat:@"%d",length]];
 }
 
 #pragma mark Instance Methodss
@@ -205,14 +208,11 @@ NSString *const BLEUnityMessageName_OnBleDidReceiveData = @"OnBleDidReceiveData"
 }
 
 +(void)SendUnityMessage:(NSString*)functionName message:(NSString*)message
-{
-    
+{   
 #ifdef UNITY_VERSION
-    UnitySendMessage(strdup([@"BLEControllerEventHandler" UTF8String]), strdup([functionName UTF8String]), strdup([message UTF8String]));
-    
+    UnitySendMessage(strdup([@"BLEControllerEventHandler" UTF8String]), strdup([functionName UTF8String]), strdup([message UTF8String]));   
 #endif
 }
-
 @end
 
 
@@ -288,11 +288,15 @@ extern "C" {
         return [delegateObject connectPeripheralAtIndex:(NSInteger)device];
     }
     
-    void _SendData (char *buffer)
+    void _SendData (unsigned char *buffer)
     {
         [delegateObject sendDataToPeripheral:(UInt8 *)buffer];
     }
     
+    unsigned char *_GetData()
+    {
+        return [delegateObject getDataRx];
+    }
 }
 
 

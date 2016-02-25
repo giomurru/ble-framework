@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.unity3d.player" android:theme="@android:style/Theme.NoTitleBar" android:versionName="1.0" android:versionCode="1" android:installLocation="preferExternal">
   <supports-screens android:smallScreens="true" android:normalScreens="true" android:largeScreens="true" android:xlargeScreens="true" android:anyDensity="true" />
+  <uses-sdk android:minSdkVersion="18" android:targetSdkVersion="18" />
 
   <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
 
@@ -19,5 +20,4 @@
     </activity>
     <service android:name="com.gmurru.bleframework.RBLService" android:enabled="true" />
   </application>
-  <uses-sdk android:minSdkVersion="18" android:targetSdkVersion="23" />
 </manifest>
