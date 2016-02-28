@@ -104,7 +104,7 @@
 		void OnBleDidCompletePeripheralScan(string message)
 		{
 		
-			if (message[0] != '{')
+			if (message != "Success")
 			{
 				if (OnBleDidCompletePeripheralScanErrorEvent!=null)
 				{
@@ -113,7 +113,8 @@
 			}
 			else
 			{
-				Dictionary<string, object> dictObject = Json.Deserialize(message) as Dictionary<string, object>;
+				string peripheralJsonList = BLEController.GetListOfDevices();
+				Dictionary<string, object> dictObject = Json.Deserialize(peripheralJsonList) as Dictionary<string, object>;
 				
 				object receivedByteDataArray;
 				List<object> peripheralsList = new List<object>();
@@ -127,10 +128,6 @@
 					OnBleDidCompletePeripheralScanEvent(peripheralsList);
 				}
 			}
-			
 		}
-		
-		
-		
 	}
 }

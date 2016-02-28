@@ -138,14 +138,14 @@ NSString *const BLEUnityMessageName_OnBleDidReceiveData = @"OnBleDidReceiveData"
             }
         }
         
-        [BLEFrameworkDelegate SendUnityMessage:BLEUnityMessageName_OnBleDidCompletePeripheralScan arrayValuesToPass:self.mDevices];
+        [BLEFrameworkDelegate SendUnityMessage:BLEUnityMessageName_OnBleDidCompletePeripheralScan message:@"Success"];
 
     }
     else
     {
         NSLog(@"No peripherals found");
         [self.mDevices removeAllObjects];
-        [BLEFrameworkDelegate SendUnityMessage:BLEUnityMessageName_OnBleDidCompletePeripheralScan message:@"0"];
+        [BLEFrameworkDelegate SendUnityMessage:BLEUnityMessageName_OnBleDidCompletePeripheralScan message:@"Fail: No device found"];
     }
     
     
@@ -268,7 +268,7 @@ extern "C" {
         if ([delegateObject searchDevicesDidFinish])
         {
             NSError *error;
-            NSDictionary *jsonObjectToSerialize = [NSDictionary dictionaryWithObject:[delegateObject mDevices] forKey:@"DeviceIDS"];
+            NSDictionary *jsonObjectToSerialize = [NSDictionary dictionaryWithObject:[delegateObject mDevices] forKey:@"data"];
             NSData *dictionaryData = [NSJSONSerialization dataWithJSONObject:jsonObjectToSerialize options:NSJSONWritingPrettyPrinted error:&error];
             NSString* jsonArrayValues = [NSString stringWithCString:(const char *)[dictionaryData bytes] encoding:NSUTF8StringEncoding];
             

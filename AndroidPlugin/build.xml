@@ -89,7 +89,7 @@
     <!-- version-tag: 1 -->
     <import file="${sdk.dir}/tools/ant/build.xml" />
 
-    <target name="jar" depends="debug">
+    <target name="jar" depends="release">
         <jar
             destfile="bin/BleFrameworkPlugin.jar"
             basedir="bin/classes" />
