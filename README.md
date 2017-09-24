@@ -6,6 +6,9 @@ To get started you can use the sample Unity project in the folder Unity. It alre
 If you want to modify the plugin or study the source code, please continue reading.
 
 Android plugin it is in binary form and it is compressed in a jar file. The project to generate the Android plugin is contained inside the folder AndroidPlugin.
+To generate the plugin jar you need to install ant. You can download it from the official website:
+http://ant.apache.org/bindownload.cgi
+
 To generate the plugin launch this command inside the AndroidPlugin folder:
 
 `ant jar`
