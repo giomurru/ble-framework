@@ -144,7 +144,7 @@ PlayerSettings:
     tvOS: com.gmurru.bleframework
   buildNumber:
     iOS: 13
-  AndroidBundleVersionCode: 99
+  AndroidBundleVersionCode: 100
   AndroidMinSdkVersion: 21
   AndroidTargetSdkVersion: 0
   AndroidPreferredInstallLocation: 0
