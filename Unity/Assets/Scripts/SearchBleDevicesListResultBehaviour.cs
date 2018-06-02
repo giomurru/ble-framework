@@ -81,7 +81,7 @@ public class SearchBleDevicesListResultBehaviour : MonoBehaviour {
 		
 		foreach (string s in peripherals)
 		{
-			GameObject instanceRow = Instantiate(buttonPrefab, new Vector3 (0,0,0), Quaternion.identity) as GameObject; 
+			GameObject instanceRow = Instantiate(buttonPrefab, new Vector3 (0.0f,-j*150.0f,0.0f), Quaternion.identity) as GameObject; 
 			instanceRow.name = s;
 			instanceRow.GetComponent<BleDeviceConnectButtonBehaviour>().LoadDataInButton(s, j);
 			instanceRow.transform.SetParent(buttonsPanel.gameObject.transform, false);
