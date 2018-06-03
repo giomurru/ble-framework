@@ -1,11 +1,11 @@
 BLE framework is a Unity library that you can use to easily manage the Bluetooth communication between your mobile device and a ReadBearLab BLE boards.
 The supported boards are:
-BLE Shield
-BLE Mini
-Blend Micro
-Blend
-BLE Nano
-RBL nRF51822
+* BLE Shield
+* BLE Mini
+* Blend Micro
+* Blend
+* BLE Nano
+* RBL nRF51822
 
 The ReadBearLab BLE boards can be attached to a micro controller such as Arduino to allow simple wireless serial communication with your mobile device.
 
