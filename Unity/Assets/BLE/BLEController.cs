@@ -84,6 +84,7 @@
 						{
 							using (AndroidJavaObject androidPlugin = bleFrameworkClass.CallStatic<AndroidJavaObject>("getInstance", currentActivity))
 	                    	{
+	                    		Debug.Log("Calling initBleFramework from androidPlugin");
 								androidPlugin.Call("_InitBLEFramework");
 							}
 	                    }
