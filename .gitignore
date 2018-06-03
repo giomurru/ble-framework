@@ -4,21 +4,6 @@
 Unity/Temp/
 Unity/Library/
 
-# ===================================== #
-# Visual Studio / MonoDevelop generated #
-# ===================================== #
-Unity/ExportedObj/
-Unity/obj/
-*.svd
-*.userprefs
-Unity/*.csproj
-*.pidb
-*.suo
-Unity/*.sln
-*.user
-*.unityproj
-*.booproj
-
 # ============ #
 # OS generated #
 # ============ #
