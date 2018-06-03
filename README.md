@@ -9,9 +9,9 @@ The supported boards are:
 
 The ReadBearLab BLE boards can be attached to a micro controller such as Arduino to allow simple wireless serial communication with your mobile device.
 
-To get started you can use the sample Unity project in the folder Unity. It already contains everything you need to get started.
+The sample Unity project inside the folder Unity contains everything you need to get started.
 
-If you want to modify the plugin or contribute to the development, please continue reading.
+Continue reading only if you want to modify the plugins or contribute to the development.
 
 Android plugin it is in binary form and it is compressed in a jar file. The Android Studio project to generate the Android plugin is contained inside the folder AndroidPluginProject.
 
