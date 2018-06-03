@@ -95,6 +95,7 @@ public class BleFramework
     Boolean variables used to estabilish the status of the connection
     */
     private boolean _connState = false;
+    private boolean _flag = true;
     private boolean _searchingDevice = false;
 
     /*
@@ -114,6 +115,7 @@ public class BleFramework
             else
             {
                 Log.d(TAG, "onServiceConnected: Bluetooth initialized correctly");
+                // do not connect automatically
                 _mBluetoothLeService.connect(_mDeviceAddress);
             }
         }
@@ -148,10 +150,6 @@ public class BleFramework
                             _mDevice.add(device);
                         }
                     }
-                    else
-                    {
-                        Log.e(TAG, "onLeScan: device is null");
-                    }
                 }
             });
         }
@@ -170,14 +168,16 @@ public class BleFramework
             if (RBLService.ACTION_GATT_CONNECTED.equals(action))
             {
                 _connState = true;
-
+                _flag = true;
                 Log.d(TAG, "Connection estabilished with: " + _mDeviceAddress);
+                Log.d(TAG, "Send BLEUnityMessageName_OnBleDidConnect success signal to Unity");
+                UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidConnect, "Success");
                 //startReadRssi();
             }
             else if (RBLService.ACTION_GATT_DISCONNECTED.equals(action))
             {
                 _connState = false;
-
+                _flag = false;
                 UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidDisconnect, "Success");
 
                 Log.d(TAG, "Connection lost");
@@ -186,15 +186,11 @@ public class BleFramework
             {
                 Log.d(TAG, "Service discovered! Registering GattService ACTION_GATT_SERVICES_DISCOVERED");
                 getGattService(_mBluetoothLeService.getSupportedGattService());
-
-                Log.d(TAG, "Send BLEUnityMessageName_OnBleDidConnect success signal to Unity");
-                UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidConnect, "Success");
             }
             else if (RBLService.ACTION_DATA_AVAILABLE.equals(action))
             {
                 Log.d(TAG, "New Data received by the server");
                 _dataRx = intent.getByteArrayExtra(RBLService.EXTRA_DATA);
-
                 UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidReceiveData, String.valueOf(_dataRx.length));
             }
             else if (RBLService.ACTION_GATT_RSSI.equals(action))
@@ -241,7 +237,7 @@ public class BleFramework
 
         intentFilter.addAction(RBLService.ACTION_GATT_CONNECTED);
         intentFilter.addAction(RBLService.ACTION_GATT_DISCONNECTED);
-        intentFilter.addAction(RBLService.ACTION_GATT_SERVICES_DISCOVERED);
+        //intentFilter.addAction(RBLService.ACTION_GATT_SERVICES_DISCOVERED);
         intentFilter.addAction(RBLService.ACTION_DATA_AVAILABLE);
         //intentFilter.addAction(RBLService.ACTION_GATT_RSSI);
 
@@ -251,7 +247,7 @@ public class BleFramework
     /*
     Start reading RSSI: information about bluetooth signal intensity
     */
-    /*
+    
     private void startReadRssi()
     {
         new Thread()
@@ -273,7 +269,7 @@ public class BleFramework
             };
         }.start();
     }
-    */
+    
     /*
     Method used to initialize the characteristic for data transmission
     */
