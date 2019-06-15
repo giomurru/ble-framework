@@ -1,12 +1,12 @@
 #include "CarController.h"
 #include "Wire.h"
 #include <Adafruit_MotorShield.h>
-#include "utility/Adafruit_PWMServoDriver.h"
+#include "utility/Adafruit_MS_PWMServoDriver.h"
 
 CarController carController(4, 1, 3, 2);
 boolean carIsMoving;
-
-boolean readyForNewCommand;
+int loopCounter;
+//boolean readyForNewCommand;
   
 void setup() {
   // put your setup code here, to run once:
@@ -15,24 +15,27 @@ void setup() {
   
   carController.Init();
   carIsMoving = false;
-  readyForNewCommand = true;
+  //readyForNewCommand = true;
   Serial.println("Setup");
   //randomSeed(analogRead(1));
+  loopCounter = 0;
 }
 
 void loop() 
 {
+  Serial.print("start loop ");
+  Serial.println(loopCounter, DEC);
   unsigned long loopStartTime = millis();
   /*
   If a command is already started wait for it to complete
   */
-  if (readyForNewCommand == false) 
-  {
-    Serial.println("Not ready for new command");
-  }
-  else
-  {
-    readyForNewCommand = false;
+//  if (readyForNewCommand == false) 
+//  {
+//    Serial.println("Not ready for new command");
+//  }
+//  else
+//  {
+//    readyForNewCommand = false;
     /*
       If the connection is stable read the commands coming from the bluetooth server (iPhone or Android device)
     */
@@ -143,7 +146,10 @@ void loop()
     else
     {
       int numOfAvailableBytes = Serial1.available();
-      if (numOfAvailableBytes > 0 && numOfAvailableBytes < 4)
+      if (numOfAvailableBytes == 0) {
+        Serial.println("There are no bytes available");
+      }
+      else if (numOfAvailableBytes > 0 && numOfAvailableBytes < 4)
       {
         Serial.print("There are only ");
         Serial.print(Serial1.available());
@@ -155,6 +161,10 @@ void loop()
       }
     }
     
-    readyForNewCommand = true;
-  }
+//    readyForNewCommand = true;
+//  }
+
+  Serial.print("end   loop ");
+  Serial.println(loopCounter, DEC);
+  loopCounter++;
 }
