@@ -15,11 +15,11 @@
 			{
 				Instance = this;
 				gameObject.name = "BLEControllerInitializer";
-				GameObject.DontDestroyOnLoad(this.gameObject);
+				DontDestroyOnLoad(this.gameObject);
 			} 
 			else 
 			{
-				GameObject.Destroy(this.gameObject);
+				Destroy(this.gameObject);
 			}
 		}
 		

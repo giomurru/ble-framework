@@ -9,18 +9,8 @@ extern NSString *const BLEUnityMessageName_OnBleDidReceiveData;
 
 @interface BLEFrameworkDelegate : NSObject
 
-@property (strong,nonatomic) NSMutableArray *mDevices;
-@property (nonatomic) BOOL isConnected;
-@property (nonatomic) BOOL searchDevicesDidFinish;
+@property (readonly, strong, nonatomic) NSData *dataRx;
 
-- (void)scanForPeripherals;
-
-- (bool)connectPeripheral:(NSString *)peripheralID;
-- (bool)connectPeripheralAtIndex:(NSInteger)index;
-- (void)sendDataToPeripheral:(UInt8 *)buf;
-
-+ (void)SendUnityMessage:(NSString*)functionName arrayValuesToPass:(NSArray*)arrayValues;
-+ (void)SendUnityMessage:(NSString*)functionName message:(NSString*)message;
 /* PROPERTIES AND METHODS OF THE IOS BLE FRAMEWORK
 @property (strong, nonatomic) NSMutableArray *peripherals;
 @property (strong, nonatomic) CBCentralManager *CM;

@@ -32,10 +32,10 @@
 		private static extern bool _ConnectPeripheral(string peripheralID);
 		
 		[DllImport ("__Internal")]
-		private static extern void _SendData(byte[] buffer);
+		private static extern void _SendData(byte[] buffer, int length);
 
 		[DllImport ("__Internal")]
-		private static extern byte[] _GetData();
+		private static extern int _GetData(byte[] data, int size);
 
 		#endif
 		
@@ -283,15 +283,23 @@
 			return result;
 		}
 
-		public static byte[] GetData()
+		public static byte[] GetData(int length)
 		{
-			byte[] result = new byte[3];
+            byte[] data = new byte[length];
 			// We check for UNITY_IPHONE again so we don't try this if it isn't iOS platform.
 			#if UNITY_IPHONE
 			// Now we check that it's actually an iOS device/simulator, not the Unity Player. You only get plugins on the actual device or iOS Simulator.
 			if (Application.platform == RuntimePlatform.IPhonePlayer)
 			{
-				result = _GetData();
+                Debug.Log("inside public static byte[] GetData()");
+				int result = _GetData(data, length);
+                if (result == 0)
+                {
+                    Debug.Log("success in getting data");
+                } else
+                {
+                    Debug.Log("failure in getting data");
+                }
 			}
 			#elif UNITY_ANDROID
 			using (AndroidJavaClass javaUnityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
@@ -302,14 +310,14 @@
 					{
 						using (AndroidJavaObject androidPlugin = bleFrameworkClass.CallStatic<AndroidJavaObject>("getInstance", currentActivity))
                     	{
-							result=androidPlugin.Call<byte[]>("_GetData");
+							data=androidPlugin.Call<byte[]>("_GetData");
 						}
 					}
 				}
             }
 			#endif
 			
-			return result;
+			return data;
 		}
 
 		public static void SendData(byte[] data)
@@ -319,7 +327,7 @@
 			// Now we check that it's actually an iOS device/simulator, not the Unity Player. You only get plugins on the actual device or iOS Simulator.
 			if (Application.platform == RuntimePlatform.IPhonePlayer)
 			{
-				_SendData(data);
+				_SendData(data, data.Length);
 			}
 			#elif UNITY_ANDROID
 			using (AndroidJavaClass javaUnityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))

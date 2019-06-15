@@ -19,10 +19,25 @@ public class AppControllerBehaviour : MonoBehaviour
 	public GameObject searchBleDevicesListResult;
 	public GameObject searchBleDevicesButton;
 	public GameObject infoMessage;
-	void Awake()
-	{
-		searchBleDevicesButton.GetComponent<Button>().enabled = false;
-	}
+
+    private byte[] lastCommand;
+
+    private readonly byte[] resetCommand = {0xfe, 0xfe, 0xfe};
+    private readonly byte[][] listOfCommands = {
+        new byte[] { 0x11, 0x00, 0xff }, // left command
+        new byte[] { 0x11, 0xff, 0x00 }, // right command
+        new byte[] { 0x11, 0xff, 0xff }, // forward command
+        new byte[] { 0x11, 0x00, 0x00 }  // stop command
+    };
+
+    private int currentCommandIndex;
+
+
+    void Awake()
+    {
+        currentCommandIndex = 0;
+        searchBleDevicesButton.GetComponent<Button>().enabled = false;
+    }
 	
 	void Start () 
 	{
@@ -68,11 +83,26 @@ public class AppControllerBehaviour : MonoBehaviour
 	{
 		Debug.Log("AppControllerBehavior: HandleOnBleDidReceiveDataEvent: size: " + numOfBytes);
 
-		for (int j=0; j < numOfBytes; j++)
-		{
-			Debug.Log("Received " + j + " byte is: " + data[j]);
-		}
+        if (numOfBytes == 1 && data[0] == 0xfe)
+        {
+            Debug.Log("Command correctly received. Can send next command.");
+            if (currentCommandIndex >= listOfCommands.Length) { currentCommandIndex = 0; }
+            lastCommand = listOfCommands[currentCommandIndex];
+            currentCommandIndex += 1;
+            //send last command in 3 seconds!
+            StartCoroutine(SendLastCommandAfterDelay(3));
+        } else if (numOfBytes == 1 && data[0] == 0xdf)
+        {
+            Debug.Log("There was an error sending the command. Retry to send last command.");
+            BLEController.SendData(lastCommand);
+        }
 	}
+
+    IEnumerator SendLastCommandAfterDelay(int delay)
+    {
+        yield return new WaitForSeconds(delay);
+        BLEController.SendData(lastCommand);
+    }
 
 	void HandleOnBleDidDisconnectEvent ()
 	{
@@ -82,10 +112,8 @@ public class AppControllerBehaviour : MonoBehaviour
 	void HandleOnBleDidConnectEvent ()
 	{
 		searchBleDevicesButton.GetComponent<Button>().enabled = true;
-
-		byte[] resetSignal = new byte[]{0xfe, 0xfe, 0xfe};
-
-		BLEController.SendData(resetSignal);
+        lastCommand = resetCommand;
+		BLEController.SendData(resetCommand);
 	}
 
 	void HandleBleDevicesListButtonConnectEvent (int buttonIndex)

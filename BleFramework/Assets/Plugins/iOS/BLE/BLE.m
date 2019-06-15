@@ -1,6 +1,8 @@
 
 /*
  
+ BLE framework source code is placed under the MIT license 
+
  Copyright (c) 2013 RedBearLab
  
  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
@@ -307,8 +309,8 @@ static int rssi = 0;
 {
     char b1[16];
     char b2[16];
-    [UUID1.data getBytes:b1];
-    [UUID2.data getBytes:b2];
+    [UUID1.data getBytes:b1 length:16];
+    [UUID2.data getBytes:b2 length:16];
     
     if (memcmp(b1, b2, UUID1.data.length) == 0)
         return 1;
@@ -320,7 +322,7 @@ static int rssi = 0;
 {
     char b1[16];
     
-    [UUID1.data getBytes:b1];
+    [UUID1.data getBytes:b1 length:16];
     UInt16 b2 = [self swap:UUID2];
     
     if (memcmp(b1, (char *)&b2, 2) == 0)
@@ -332,7 +334,7 @@ static int rssi = 0;
 -(UInt16) CBUUIDToInt:(CBUUID *) UUID
 {
     char b1[16];
-    [UUID.data getBytes:b1];
+    [UUID.data getBytes:b1 length:16];
     return ((b1[0] << 8) | b1[1]);
 }
 
@@ -413,6 +415,7 @@ static int rssi = 0;
 {
 #if TARGET_OS_IPHONE
     NSLog(@"Status of CoreBluetooth central manager changed %ld (%s)", (long)central.state, [self centralManagerStateToString:central.state]);
+	[self.delegate bleDidChangeState: central.state];
 #else
     [self isLECapableHardware];
 #endif
@@ -565,15 +568,16 @@ static bool done = false;
     }
 }
 
-- (void)peripheralDidUpdateRSSI:(CBPeripheral *)peripheral error:(NSError *)error
-{
-    if (!isConnected)
+- (void)peripheral:(CBPeripheral *)peripheral
+               didReadRSSI:(NSNumber *)RSSI
+             error:(NSError *)error {
+    if (!isConnected || error != nil)
         return;
     
-    if (rssi != peripheral.RSSI.intValue)
+    if (rssi != RSSI.intValue)
     {
-        rssi = peripheral.RSSI.intValue;
-        [[self delegate] bleDidUpdateRSSI:activePeripheral.RSSI];
+        rssi = RSSI.intValue;
+        [[self delegate] bleDidUpdateRSSI:RSSI];
     }
 }
 

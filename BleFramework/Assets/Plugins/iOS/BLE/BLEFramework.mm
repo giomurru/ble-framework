@@ -8,32 +8,25 @@ NSString *const BLEUnityMessageName_OnBleDidDisconnect = @"OnBleDidDisconnect";
 NSString *const BLEUnityMessageName_OnBleDidReceiveData = @"OnBleDidReceiveData";
 
 @interface BLEFrameworkDelegate() <BLEDelegate>
-//@property (nonatomic, strong) NSString *rssiValue;
+@property (strong,nonatomic) NSMutableArray *mDevices;
+@property (strong, nonatomic) BLE *ble;
+@property (nonatomic) BOOL isConnected;
+@property (nonatomic) BOOL searchDevicesDidFinish;
 @end
 
 @implementation BLEFrameworkDelegate
-{
-    BLE *ble;
-    unsigned char *dataRx;
-    //NSTimer *rssiTimer;
-}
-
-- (unsigned char *)getDataRx
-{
-    return dataRx;
-}
 
 - (id) init
 {
     self = [super init];
     if (self)
     {
-        ble = [[BLE alloc] init];
+        self.ble = [[BLE alloc] init];
         
-        if (ble)
+        if (self.ble)
         {
-            [ble controlSetup];
-            ble.delegate = self;
+            [self.ble controlSetup];
+            self.ble.delegate = self;
             self.mDevices = [[NSMutableArray alloc] init];
             [BLEFrameworkDelegate SendUnityMessage:BLEUnityMessageName_OnBleDidInitialize message:@"Success"];
         }
@@ -53,7 +46,13 @@ NSString *const BLEUnityMessageName_OnBleDidReceiveData = @"OnBleDidReceiveData"
 
 
 #pragma mark BLEDelegate methods
-
+/*
+ -(void) bleDidConnect;
+ -(void) bleDidDisconnect;
+ -(void) bleDidUpdateRSSI:(NSNumber *) rssi;
+ -(void) bleDidReceiveData:(unsigned char *) data length:(int) length;
+ -(void) bleDidChangeState: (CBManagerState *) state;
+ */
 -(void) bleDidConnect
 {
     NSLog(@"->Connected");
@@ -89,12 +88,19 @@ NSString *const BLEUnityMessageName_OnBleDidReceiveData = @"OnBleDidReceiveData"
 
 - (void) bleDidReceiveData:(unsigned char *)data length:(int)length
 {
-    NSLog(@"bleDidReceiveData length: %d", length);
-    
-    dataRx = data;
-    [BLEFrameworkDelegate SendUnityMessage:BLEUnityMessageName_OnBleDidReceiveData message:[NSString stringWithFormat:@"%d",length]];
+    if (length > 0 && data != NULL) {
+        NSLog(@"bleDidReceiveData length: %d", length);
+        _dataRx = [NSData dataWithBytes:data length:length];
+        NSLog(@"The data received is %x", ((unsigned char *)self.dataRx.bytes)[0]);
+        [BLEFrameworkDelegate SendUnityMessage:BLEUnityMessageName_OnBleDidReceiveData message:[NSString stringWithFormat:@"%d",length]];
+    } else {
+        NSLog(@"bleDidReceiveData: empty data");
+    }
 }
 
+-(void) bleDidChangeState: (CBManagerState) state {
+    NSLog(@"state of ble: %ld", (long)state);
+}
 #pragma mark Instance Methodss
 /*
  -(void) readRSSITimer:(NSTimer *)timer
@@ -107,26 +113,26 @@ NSString *const BLEUnityMessageName_OnBleDidReceiveData = @"OnBleDidReceiveData"
 - (void)scanForPeripherals
 {
     
-    if (ble.peripherals)
+    if (self.ble.peripherals)
     {
-        ble.peripherals = nil;
+        self.ble.peripherals = nil;
     }
     
-    [ble findBLEPeripherals:2];
+    [self.ble findBLEPeripherals:2];
     
     [NSTimer scheduledTimerWithTimeInterval:(float)2.0 target:self selector:@selector(connectionTimer:) userInfo:nil repeats:NO];
 }
 
 -(void) connectionTimer:(NSTimer *)timer
 {
-    if (ble.peripherals.count > 0)
+    if (self.ble.peripherals.count > 0)
     {
         [self.mDevices removeAllObjects];
         
         int i;
-        for (i = 0; i < ble.peripherals.count; i++)
+        for (i = 0; i < self.ble.peripherals.count; i++)
         {
-            CBPeripheral *p = [ble.peripherals objectAtIndex:i];
+            CBPeripheral *p = [self.ble.peripherals objectAtIndex:i];
             
             if (p.identifier.UUIDString != NULL)
             {
@@ -155,7 +161,7 @@ NSString *const BLEUnityMessageName_OnBleDidReceiveData = @"OnBleDidReceiveData"
 - (bool)connectPeripheral:(NSString *)peripheralID
 {
     CBPeripheral *selectedPeripheral;
-    for (CBPeripheral *p in ble.peripherals)
+    for (CBPeripheral *p in self.ble.peripherals)
     {
         if ([p.identifier.UUIDString isEqualToString:peripheralID])
         {
@@ -165,7 +171,7 @@ NSString *const BLEUnityMessageName_OnBleDidReceiveData = @"OnBleDidReceiveData"
     
     if (selectedPeripheral != nil)
     {
-        [ble connectPeripheral:selectedPeripheral];
+        [self.ble connectPeripheral:selectedPeripheral];
         return true;
     }
     
@@ -173,25 +179,24 @@ NSString *const BLEUnityMessageName_OnBleDidReceiveData = @"OnBleDidReceiveData"
 }
 - (bool)connectPeripheralAtIndex:(NSInteger)index
 {
-    if (index >= ble.peripherals.count)
+    if (index >= self.ble.peripherals.count)
     {
         return false;
     }
-    else if ([ble.peripherals objectAtIndex:index]!=nil)
+    else if ([self.ble.peripherals objectAtIndex:index]!=nil)
     {
-        [ble connectPeripheral:[ble.peripherals objectAtIndex:index]];
+        [self.ble connectPeripheral:[self.ble.peripherals objectAtIndex:index]];
         return true;
     }
     
     return false;
 }
 
-- (void)sendDataToPeripheral:(UInt8 *)buf
+- (void)sendDataToPeripheral:(UInt8 *)buf length:(NSUInteger) length
 {
     //UInt8 buf[3] = {0x01, 0x00, 0x00};
-    
-    NSData *data = [[NSData alloc] initWithBytes:buf length:3];
-    [ble write:data];
+    NSData *data = [[NSData alloc] initWithBytes:buf length:length];
+    [self.ble write:data];
 }
 
 #pragma mark Class Methods
@@ -242,7 +247,6 @@ char* MakeStringCopy (const char* string)
 // should be surrounded with extern "C" block to conform C function naming rules
 extern "C" {
     
-    
     void _InitBLEFramework ()
     {
         delegateObject = [[BLEFrameworkDelegate alloc] init];
@@ -288,14 +292,21 @@ extern "C" {
         return [delegateObject connectPeripheralAtIndex:(NSInteger)device];
     }
     
-    void _SendData (unsigned char *buffer)
+    void _SendData (unsigned char *buffer, int length)
     {
-        [delegateObject sendDataToPeripheral:(UInt8 *)buffer];
+        [delegateObject sendDataToPeripheral:(UInt8 *)buffer length: length];
     }
     
-    unsigned char *_GetData()
+    int __declspec(dllexport) _GetData(unsigned char &data, int size)
     {
-        return [delegateObject getDataRx];
+        if (delegateObject.dataRx != nil) {
+            memcpy(data, [delegateObject.dataRx bytes], sizeof(data));
+            NSLog(@"The data saved is %x", data[0]);
+            return 0;
+        } else {
+            NSLog(@"something is wrong. dataRx is nil");
+            return -1;
+        }
     }
 }
 

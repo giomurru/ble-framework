@@ -90,12 +90,19 @@
 			int numOfBytes = 0;
 			if (int.TryParse(message, out numOfBytes))
 			{
-				byte[] data = BLEController.GetData();
-
-				if (OnBleDidReceiveDataEvent!=null)
-				{
-					OnBleDidReceiveDataEvent(data, numOfBytes);
-				}
+                if (numOfBytes != 0)
+                {
+                    Debug.Log("BLEController.GetData(); start");
+                    byte[] data = BLEController.GetData(numOfBytes);
+                    Debug.Log("BLEController.GetData(); end");
+                    if (OnBleDidReceiveDataEvent != null)
+                    {
+                        OnBleDidReceiveDataEvent(data, numOfBytes);
+                    }
+                } else
+                {
+                    Debug.Log("WARNING: did receive OnBleDidReceiveData even if numOfBytes is zero");
+                }
 			}
 			
 
