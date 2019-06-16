@@ -1,11 +1,11 @@
 #import "BLE.h"
 #import "BLEFramework.h"
 
-NSString *const BLEUnityMessageName_OnBleDidInitialize = @"OnBleDidInitialize";
-NSString *const BLEUnityMessageName_OnBleDidConnect = @"OnBleDidConnect";
-NSString *const BLEUnityMessageName_OnBleDidCompletePeripheralScan = @"OnBleDidCompletePeripheralScan";
-NSString *const BLEUnityMessageName_OnBleDidDisconnect = @"OnBleDidDisconnect";
-NSString *const BLEUnityMessageName_OnBleDidReceiveData = @"OnBleDidReceiveData";
+NSString *const BLEUnityMessageName_OnBleDidInitialize = @"OnBleDidInitializeMessage";
+NSString *const BLEUnityMessageName_OnBleDidConnect = @"OnBleDidConnectMessage";
+NSString *const BLEUnityMessageName_OnBleDidCompletePeripheralScan = @"OnBleDidCompletePeripheralScanMessage";
+NSString *const BLEUnityMessageName_OnBleDidDisconnect = @"OnBleDidDisconnectMessage";
+NSString *const BLEUnityMessageName_OnBleDidReceiveData = @"OnBleDidReceiveDataMessage";
 
 @interface BLEFrameworkDelegate() <BLEDelegate>
 @property (strong,nonatomic) NSMutableArray *mDevices;
@@ -297,11 +297,11 @@ extern "C" {
         [delegateObject sendDataToPeripheral:(UInt8 *)buffer length: length];
     }
     
-    int __declspec(dllexport) _GetData(unsigned char &data, int size)
+    int _GetData(unsigned char **data, int size)
     {
         if (delegateObject.dataRx != nil) {
-            memcpy(data, [delegateObject.dataRx bytes], sizeof(data));
-            NSLog(@"The data saved is %x", data[0]);
+            memcpy(data, [delegateObject.dataRx bytes], size*sizeof(char));
+            NSLog(@"The data saved is %x", *data);
             return 0;
         } else {
             NSLog(@"something is wrong. dataRx is nil");

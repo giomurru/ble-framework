@@ -38,8 +38,13 @@
 		public delegate void OnBleDidCompletePeripheralScanErrorEventDelegate(string errorMessage);
 		public static event OnBleDidCompletePeripheralScanErrorEventDelegate OnBleDidCompletePeripheralScanErrorEvent;
 		
-		
-		
+
+        //Instance methods used by iOS Unity Send Message
+        void OnBleDidInitializeMessage(string message)
+		{
+			BLEControllerEventHandler.OnBleDidInitialize(message);
+		}
+
 		public static void OnBleDidInitialize(string message)
 		{
 			if (message=="Success")
@@ -54,7 +59,12 @@
 				OnBleDidInitializeErrorEvent(message);
 			}
 		}
-		
+
+
+        void OnBleDidConnectMessage(string message)
+		{
+			BLEControllerEventHandler.OnBleDidConnect(message);
+		}
 		public static void OnBleDidConnect(string message)
 		{
 			if (message=="Success")
@@ -69,7 +79,11 @@
 				OnBleDidConnectErrorEvent(message);
 			}
 		}
-		
+
+		void OnBleDidDisconnectMessage(string message)
+		{
+			BLEControllerEventHandler.OnBleDidDisconnect(message);
+		}
 		public static void OnBleDidDisconnect(string message)
 		{
 			if (message=="Success")
@@ -84,7 +98,11 @@
 				OnBleDidDisconnectErrorEvent(message);
 			}
 		}
-		
+
+		void OnBleDidReceiveDataMessage(string message)
+		{
+			BLEControllerEventHandler.OnBleDidReceiveData(message);
+		}
 		public static void OnBleDidReceiveData(string message)
 		{
 			int numOfBytes = 0;
@@ -107,7 +125,11 @@
 			
 
 		}
-		
+
+		void OnBleDidCompletePeripheralScanMessage(string message)
+		{
+			BLEControllerEventHandler.OnBleDidCompletePeripheralScan(message);
+		}
 		public static void OnBleDidCompletePeripheralScan(string message)
 		{
 			if (message != "Success") {
