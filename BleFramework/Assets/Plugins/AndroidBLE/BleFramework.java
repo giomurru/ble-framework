@@ -59,13 +59,13 @@ public class BleFramework
     */
     private static final String TAG = BleFramework.class.getSimpleName();
     private static final int REQUEST_ENABLE_BT = 1;
-    private static final long SCAN_PERIOD = 10000;
+    private static final long SCAN_PERIOD = 3000;
     public static final int REQUEST_CODE = 30;
 
     /*
     List containing all the discovered bluetooth devices
     */
-    private List<BluetoothDevice> _mDevice = new ArrayList<BluetoothDevice>();
+    private ArrayList<BluetoothDevice> _mDevice = new ArrayList<BluetoothDevice>();
 
     /*
     The latest received data
@@ -87,15 +87,14 @@ public class BleFramework
     /*
     Bluetooth device address and name to which the app is currently connected
     */
-    private BluetoothDevice _device;
     private String _mDeviceAddress;
     private String _mDeviceName;
-    private Handler _mHandler;
     /*
     Boolean variables used to estabilish the status of the connection
     */
     private boolean _connState = false;
     private boolean _flag = true;
+    // Flag used to understand if search of devices is in progress
     private boolean _searchingDevice = false;
 
     /*
@@ -127,30 +126,6 @@ public class BleFramework
             _mBluetoothLeService = null;
         }
     };
-
-    /*
-    Callback called when the scan of bluetooth devices is finished
-    */
-    private BluetoothAdapter.LeScanCallback _mLeScanCallback = new BluetoothAdapter.LeScanCallback()
-    {
-        @Override
-        public void onLeScan(final BluetoothDevice device, final int rssi, byte[] scanRecord)
-        {
-            _unityActivity.runOnUiThread(new Runnable() {
-                @Override
-                public void run()
-                {
-                    Log.d(TAG, "onLeScan: run()");
-                    if (device != null)
-                    {
-                        _mDevice.add(device);
-                    }
-                }
-            });
-        }
-    };
-
-
 
     /*
     Callback called when the bluetooth device receive relevant updates about connection, disconnection, service discovery, data available, rssi update
@@ -221,7 +196,6 @@ public class BleFramework
     {
         Log.d(TAG, "BleFramework: saving unityActivity in private var.");
         this._unityActivity = activity;
-        this._mHandler = new Handler();
     }
 
     /*
@@ -234,8 +208,8 @@ public class BleFramework
         intentFilter.addAction(RBLService.ACTION_GATT_CONNECTED);
         intentFilter.addAction(RBLService.ACTION_GATT_DISCONNECTED);
         //intentFilter.addAction(RBLService.ACTION_GATT_SERVICES_DISCOVERED);
-        intentFilter.addAction(RBLService.ACTION_DATA_AVAILABLE);
-        //intentFilter.addAction(RBLService.ACTION_GATT_RSSI);
+        //intentFilter.addAction(RBLService.ACTION_DATA_AVAILABLE);
+        intentFilter.addAction(RBLService.ACTION_GATT_RSSI);
 
         return intentFilter;
     }
@@ -250,7 +224,7 @@ public class BleFramework
         {
             public void run()
             {
-                while (_connState)
+                while (_flag)
                 {
                     _mBluetoothLeService.readRssi();
                     try
@@ -287,16 +261,70 @@ public class BleFramework
 
 
     /*
+    Callback called when the scan of bluetooth devices is finished
+    */
+    private BluetoothAdapter.LeScanCallback mLeScanCallback = new BluetoothAdapter.LeScanCallback()
+    {
+        @Override
+        public void onLeScan(final BluetoothDevice device, final int rssi, byte[] scanRecord)
+        {
+            Log.d(TAG, "onLeScan: launching runOnUiThread");
+            _unityActivity.runOnUiThread(new Runnable() {
+                @Override
+                public void run()
+                {
+                    Log.d(TAG, "onLeScan: run()");
+                    if (device != null)
+                    {
+                        //don't include duplicates
+                        if (_mDevice.indexOf(device) == -1) {
+                            _mDevice.add(device);
+                        }
+                    }
+                }
+            });
+        }
+    };
+    /*
     Method used to scan for available bluetooth low energy devices
     */
+    // private void scanLeDevice() {
+    //     // Stops scanning after a pre-defined scan period.
+    //     _mHandler.postDelayed(new Runnable() {
+    //         @Override
+    //         public void run() {
+    //             Log.d(TAG, "end scanning");
+    //             _searchingDevice = false;
+    //             _mBluetoothAdapter.stopLeScan(mLeScanCallback);
+    //             String message = "Fail: No device found";
+    //             if (_mDevice.size() > 0) {
+    //                 message = "Success";
+    //             }
+    //             Log.d(TAG, message);
+    //             UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidCompletePeripheralScan, message);
+    //         }
+    //     }, SCAN_PERIOD);
+    //     Log.d(TAG, "start scanning");
+    //     _searchingDevice = true;
+    //     _mBluetoothAdapter.startLeScan(mLeScanCallback);
+    // }
+
     private void scanLeDevice() {
-        // Stops scanning after a pre-defined scan period.
-        _mHandler.postDelayed(new Runnable() {
+
+        _unityActivity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Log.d(TAG, "end scanning");
+                _searchingDevice = true;
+                _mBluetoothAdapter.startLeScan(mLeScanCallback);
+
+                try {
+                    Thread.sleep(SCAN_PERIOD);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
                 _searchingDevice = false;
-                _mBluetoothAdapter.stopLeScan(_mLeScanCallback);
+                _mBluetoothAdapter.stopLeScan(mLeScanCallback);
                 String message = "Fail: No device found";
                 if (_mDevice.size() > 0) {
                     message = "Success";
@@ -304,15 +332,13 @@ public class BleFramework
                 Log.d(TAG, message);
                 UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidCompletePeripheralScan, message);
             }
-        }, SCAN_PERIOD);
-        Log.d(TAG, "start scanning");
-        _searchingDevice = true;
-        _mBluetoothAdapter.startLeScan(_mLeScanCallback);
+        });
     }
 
     private void unregisterBleUpdatesReceiver()
     {
         Log.d(TAG,"unregisterBleUpdatesReceiver:");
+        _flag = false;
         _unityActivity.unregisterReceiver(_mGattUpdateReceiver);
     }
 
