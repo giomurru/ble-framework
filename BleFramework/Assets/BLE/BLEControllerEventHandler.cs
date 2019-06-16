@@ -110,29 +110,38 @@
 		
 		void OnBleDidCompletePeripheralScan(string message)
 		{
-		
-			if (message != "Success")
-			{
-				if (OnBleDidCompletePeripheralScanErrorEvent!=null)
-				{
+			if (message != "Success") {
+				Debug.Log("OnBleDidCompletePeripheralScan: message is not success");
+				if (OnBleDidCompletePeripheralScanErrorEvent!=null) {
+					Debug.Log("OnBleDidCompletePeripheralScan: call OnBleDidCompletePeripheralScanErrorEvent: " + message);
 					OnBleDidCompletePeripheralScanErrorEvent(message);
 				}
 			}
-			else
-			{
+			else {
+				Debug.Log("call BLEController.GetListOfDevices()");
 				string peripheralJsonList = BLEController.GetListOfDevices();
-				Dictionary<string, object> dictObject = Json.Deserialize(peripheralJsonList) as Dictionary<string, object>;
-				
-				object receivedByteDataArray;
-				List<object> peripheralsList = new List<object>();
-				if (dictObject.TryGetValue ("data", out receivedByteDataArray)) 
-				{
-					peripheralsList = (List<object>) receivedByteDataArray;
-				}
-				
-				if (OnBleDidCompletePeripheralScanEvent!=null)
-				{
-					OnBleDidCompletePeripheralScanEvent(peripheralsList);
+				Debug.Log("the json list is "+ peripheralJsonList);
+				if (peripheralJsonList != null) {
+					Dictionary<string, object> dictObject = Json.Deserialize(peripheralJsonList) as Dictionary<string, object>;
+
+					object receivedByteDataArray;
+					List<object> peripheralsList = new List<object>();
+					if (dictObject.TryGetValue("data", out receivedByteDataArray)) {
+						Debug.Log("OnBleDidCompletePeripheralScan: I received the peripheral list");
+						peripheralsList = (List<object>)receivedByteDataArray;
+						Debug.Log("OnBleDidCompletePeripheralScan: I set the peripheral list");
+					}
+
+					if (OnBleDidCompletePeripheralScanEvent != null) {
+						Debug.Log("OnBleDidCompletePeripheralScan: I call OnBleDidCompletePeripheralScanEvent");
+						OnBleDidCompletePeripheralScanEvent(peripheralsList);
+					}
+				} else {
+					if (OnBleDidCompletePeripheralScanErrorEvent != null)
+					{
+						Debug.Log("OnBleDidCompletePeripheralScan: call OnBleDidCompletePeripheralScanErrorEvent: " + message);
+						OnBleDidCompletePeripheralScanErrorEvent("0");
+					}
 				}
 			}
 		}

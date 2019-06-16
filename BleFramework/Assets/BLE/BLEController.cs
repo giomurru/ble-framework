@@ -53,29 +53,6 @@
 			#elif UNITY_ANDROID
 			if (Application.platform == RuntimePlatform.Android)
 	        {
-	        /*
-   				AndroidJavaClass ajc = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
-   				AndroidJavaObject ajo = ajc.GetStatic<AndroidJavaObject>("currentActivity");
- 
-   				var jc = new AndroidJavaClass("com.gmurru.bleframework.BleFrameworkManager");
-   				jc.CallStatic("launchActivity", ajo);
-   				*/
-   				/*
-				using (AndroidJavaClass javaUnityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
-            	{
-					using (AndroidJavaObject currentActivity = javaUnityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
-	                {
-						using (AndroidJavaClass bleFrameworkManagerClass = new AndroidJavaClass("com.gmurru.bleframework.BleFrameworkManager"))
-						{
-							using (AndroidJavaObject androidPlugin = bleFrameworkManagerClass.CallStatic<AndroidJavaObject>("getInstance", currentActivity))
-	                    	{
-								androidPlugin.Call("launchActivity", currentActivity);
-							}
-	                    }
-	                }
-	            }
-	            */
-	        	
 				using (AndroidJavaClass javaUnityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
             	{
 					using (AndroidJavaObject currentActivity = javaUnityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
@@ -90,21 +67,6 @@
 	                    }
 	                }
 	            }
-	            /*
-	            using (AndroidJavaClass javaUnityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
-	            {
-					using (AndroidJavaObject currentActivity = javaUnityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
-	                {
-						using (AndroidJavaClass bleFrameworkClass = new AndroidJavaClass("com.gmurru.bleframework.BleFramework"))
-						{
-							using (AndroidJavaObject androidPlugin = bleFrameworkClass.CallStatic<AndroidJavaObject>("getInstance", currentActivity))
-	                    	{
-								isConnected=androidPlugin.Call<bool>("_IsDeviceConnected");
-							}
-	                    }
-	                }
-	            }
-	            */
 	        }
 			#endif
 		}

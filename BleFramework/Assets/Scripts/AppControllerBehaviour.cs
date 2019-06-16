@@ -148,7 +148,13 @@ public class AppControllerBehaviour : MonoBehaviour
 	}
 
 	void HandleOnBleDidCompletePeripheralScanEvent (List<object> peripherals)
-	{		
+	{
+        if (peripherals == null)
+        {
+            Debug.Log("Error: the peripheral is null");
+            DestroyActivityIndicator();
+            return;
+        }
 		int i = 0;
 		foreach (string s in peripherals)
 		{

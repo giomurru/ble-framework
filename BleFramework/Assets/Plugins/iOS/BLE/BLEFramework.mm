@@ -269,7 +269,7 @@ extern "C" {
     
     const char* _GetListOfDevices ()
     {
-        if ([delegateObject searchDevicesDidFinish])
+        if ([delegateObject searchDevicesDidFinish]/* && [delegateObject mDevices].count > 0*/)
         {
             NSError *error;
             NSDictionary *jsonObjectToSerialize = [NSDictionary dictionaryWithObject:[delegateObject mDevices] forKey:@"data"];
