@@ -40,7 +40,7 @@
 		
 		
 		
-		void OnBleDidInitialize(string message)
+		public static void OnBleDidInitialize(string message)
 		{
 			if (message=="Success")
 			{
@@ -55,7 +55,7 @@
 			}
 		}
 		
-		void OnBleDidConnect(string message)
+		public static void OnBleDidConnect(string message)
 		{
 			if (message=="Success")
 			{
@@ -70,7 +70,7 @@
 			}
 		}
 		
-		void OnBleDidDisconnect(string message)
+		public static void OnBleDidDisconnect(string message)
 		{
 			if (message=="Success")
 			{
@@ -85,7 +85,7 @@
 			}
 		}
 		
-		void OnBleDidReceiveData(string message)
+		public static void OnBleDidReceiveData(string message)
 		{
 			int numOfBytes = 0;
 			if (int.TryParse(message, out numOfBytes))
@@ -108,7 +108,7 @@
 
 		}
 		
-		void OnBleDidCompletePeripheralScan(string message)
+		public static void OnBleDidCompletePeripheralScan(string message)
 		{
 			if (message != "Success") {
 				Debug.Log("OnBleDidCompletePeripheralScan: message is not success");
