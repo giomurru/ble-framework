@@ -53,10 +53,9 @@ public class BleFramework
     public static final String BLEUnityMessageName_OnBleDidDisconnect = "OnBleDidDisconnect";
     public static final String BLEUnityMessageName_OnBleDidReceiveData = "OnBleDidReceiveData";
 
-    public interface InitBLEFrameworkCallback {
-        public void onBleDidInitialize(String message);
+    public interface UnityCallback {
+        public void sendMessage(String message);
     }
-
     /*
     Static variables
     */
@@ -272,9 +271,65 @@ public class BleFramework
         }
     };
 
+    private void unregisterBleUpdatesReceiver()
+    {
+        Log.d(TAG,"unregisterBleUpdatesReceiver:");
+        _flag = false;
+        _unityActivity.unregisterReceiver(_mGattUpdateReceiver);
+    }
 
-    private void scanLeDevice() {
+    private void registerBleUpdatesReceiver()
+    {
+        Log.d(TAG,"registerBleUpdatesReceiver:");
+        _unityActivity.registerReceiver(_mGattUpdateReceiver, makeGattUpdateIntentFilter());
+    }
 
+
+    /*
+    Public methods that can be directly called by Unity
+    */
+    public void _InitBLEFramework(final UnityCallback callback)
+    {
+        System.out.println("Android Executing: _InitBLEFramework");
+
+        if (!_unityActivity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE))
+        {
+            Log.d(TAG,"onCreate: fail: missing FEATURE_BLUETOOTH_LE");
+            ////UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidInitialize, "Fail: missing Bluetooth LE");
+            //finish();
+            callback.sendMessage("Fail: missing Bluetooth LE");
+            return;
+        }
+
+        final BluetoothManager mBluetoothManager = (BluetoothManager) _unityActivity.getSystemService(Context.BLUETOOTH_SERVICE);
+        _mBluetoothAdapter = mBluetoothManager.getAdapter();
+        if (_mBluetoothAdapter == null)
+        {
+            Log.d(TAG,"onCreate: fail: _mBluetoothAdapter is null");
+            ////UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidInitialize, "Fail: missing Bluetooth adapter");
+            //finish();
+            callback.sendMessage("Fail: missing Bluetooth adapter");
+            return;
+        }
+        if (!_mBluetoothAdapter.isEnabled())
+        {
+            Log.d(TAG,"registerBleUpdatesReceiver: WARNING: _mBluetoothAdapter is not enabled!");
+            callback.sendMessage("Fail: Bluetooth is not enabled");
+            ////UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidInitialize, "Fail: Bluetooth is not enabled");
+            return;
+        }
+
+        registerBleUpdatesReceiver();
+
+        Log.d(TAG,"onCreate: _mBluetoothAdapter correctly initialized");
+        callback.sendMessage("Success");
+        ////UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidInitialize, "Success");
+
+    }
+
+    public void _ScanForPeripherals(final UnityCallback callback)
+    {
+        Log.d(TAG, "_ScanForPeripherals: Launching thread for scanning peripherals");
         _unityActivity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -294,71 +349,10 @@ public class BleFramework
                     message = "Success";
                 }
                 Log.d(TAG, message);
+                callback.sendMessage(message);
                 ////UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidCompletePeripheralScan, message);
             }
         });
-    }
-
-    private void unregisterBleUpdatesReceiver()
-    {
-        Log.d(TAG,"unregisterBleUpdatesReceiver:");
-        _flag = false;
-        _unityActivity.unregisterReceiver(_mGattUpdateReceiver);
-    }
-
-    private void registerBleUpdatesReceiver()
-    {
-        Log.d(TAG,"registerBleUpdatesReceiver:");
-        _unityActivity.registerReceiver(_mGattUpdateReceiver, makeGattUpdateIntentFilter());
-    }
-
-
-    /*
-    Public methods that can be directly called by Unity
-    */
-    public void _InitBLEFramework(final InitBLEFrameworkCallback callback)
-    {
-        System.out.println("Android Executing: _InitBLEFramework");
-
-        if (!_unityActivity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE))
-        {
-            Log.d(TAG,"onCreate: fail: missing FEATURE_BLUETOOTH_LE");
-            ////UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidInitialize, "Fail: missing Bluetooth LE");
-            //finish();
-            callback.onBleDidInitialize("Fail: missing Bluetooth LE");
-            return;
-        }
-
-        final BluetoothManager mBluetoothManager = (BluetoothManager) _unityActivity.getSystemService(Context.BLUETOOTH_SERVICE);
-        _mBluetoothAdapter = mBluetoothManager.getAdapter();
-        if (_mBluetoothAdapter == null)
-        {
-            Log.d(TAG,"onCreate: fail: _mBluetoothAdapter is null");
-            ////UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidInitialize, "Fail: missing Bluetooth adapter");
-            //finish();
-            callback.onBleDidInitialize("Fail: missing Bluetooth adapter");
-            return;
-        }
-        if (!_mBluetoothAdapter.isEnabled())
-        {
-            Log.d(TAG,"registerBleUpdatesReceiver: WARNING: _mBluetoothAdapter is not enabled!");
-            callback.onBleDidInitialize("Fail: Bluetooth is not enabled");
-            ////UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidInitialize, "Fail: Bluetooth is not enabled");
-            return;
-        }
-
-        registerBleUpdatesReceiver();
-
-        Log.d(TAG,"onCreate: _mBluetoothAdapter correctly initialized");
-        callback.onBleDidInitialize("Success");
-        ////UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidInitialize, "Success");
-
-    }
-
-    public void _ScanForPeripherals()
-    {
-        Log.d(TAG, "_ScanForPeripherals: Launching scanLeDevice");
-        scanLeDevice();
     }
 
     public boolean _IsDeviceConnected()

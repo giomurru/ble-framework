@@ -21,9 +21,6 @@
 		private static extern bool _IsDeviceConnected();
 		
 		[DllImport ("__Internal")]
-		private static extern bool _SearchDevicesDidFinish();
-		
-		[DllImport ("__Internal")]
 		private static extern string _GetListOfDevices();
 		
 		[DllImport ("__Internal")]
@@ -40,16 +37,16 @@
 
 #elif UNITY_ANDROID
 
-        class InitBLEFrameworkCallback : AndroidJavaProxy
+        class UnityCallback : AndroidJavaProxy
         {
             private System.Action<string> initializeHandler;
-            public InitBLEFrameworkCallback(System.Action<string> initializeHandlerIn) : base(bleFrameworkPathName + "$InitBLEFrameworkCallback")
+            public UnityCallback(System.Action<string> initializeHandlerIn) : base(bleFrameworkPathName + "$UnityCallback")
             {
                 initializeHandler = initializeHandlerIn;
             }
-            public void onBleDidInitialize(string message)
+            public void sendMessage(string message)
             {
-                Debug.Log("onBleDidInitialize: " + message);
+                Debug.Log("sendMessage: " + message);
                 if (initializeHandler != null)
                 {
                     initializeHandler(message);
@@ -106,7 +103,7 @@
                 {
                     BLEControllerEventHandler.OnBleDidInitialize(message);
                 });
-                PluginInstance.Call("_InitBLEFramework", new object[] { new InitBLEFrameworkCallback(callback)});
+                PluginInstance.Call("_InitBLEFramework", new object[] { new UnityCallback(callback)});
 	        }
 			#endif
 		}
@@ -123,7 +120,11 @@
 			#elif UNITY_ANDROID
 			if (Application.platform == RuntimePlatform.Android)
             {
-                PluginInstance.Call("_ScanForPeripherals");
+                System.Action<string> callback = ((string message) =>
+                {
+                    BLEControllerEventHandler.OnBleDidCompletePeripheralScan(message);
+                });
+                PluginInstance.Call("_ScanForPeripherals", new object[] { new UnityCallback(callback) });
             }
 			#endif
 		}
@@ -146,26 +147,6 @@
 #endif
 			
 			return isConnected;
-		}
-		
-		public static bool SearchDevicesDidFinish()
-		{
-			bool searchDevicesDidFinish = false;
-            // We check for UNITY_IPHONE again so we don't try this if it isn't iOS platform.
-#if UNITY_IPHONE
-			// Now we check that it's actually an iOS device/simulator, not the Unity Player. You only get plugins on the actual device or iOS Simulator.
-			if (Application.platform == RuntimePlatform.IPhonePlayer)
-			{
-				searchDevicesDidFinish = _SearchDevicesDidFinish();
-			}
-#elif UNITY_ANDROID
-            if (Application.platform == RuntimePlatform.Android)
-            {
-                searchDevicesDidFinish = PluginInstance.Call<bool>("_SearchDevicesDidFinish");
-            }
-#endif
-			
-			return searchDevicesDidFinish;
 		}
 		
 		public static string GetListOfDevices()

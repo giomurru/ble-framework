@@ -112,6 +112,7 @@ NSString *const BLEUnityMessageName_OnBleDidReceiveData = @"OnBleDidReceiveDataM
 
 - (void)scanForPeripherals
 {
+    self.searchDevicesDidFinish = false;
     
     if (self.ble.peripherals)
     {
@@ -260,11 +261,6 @@ extern "C" {
     bool _IsDeviceConnected()
     {
         return [delegateObject isConnected];
-    }
-    
-    bool _SearchDevicesDidFinish()
-    {
-        return [delegateObject searchDevicesDidFinish];
     }
     
     const char* _GetListOfDevices ()
