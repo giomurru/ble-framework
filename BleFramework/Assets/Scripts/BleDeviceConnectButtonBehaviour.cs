@@ -10,21 +10,19 @@ public class BleDeviceConnectButtonBehaviour : MonoBehaviour {
 
 	public GameObject buttonTitle;
 
-	int buttonIndex;
+    public string title;
+	public int index;
 	
 	public void ExecuteBleDevicesListButtonAction()
 	{
 		if (BleDevicesListButtonConnectEvent!=null)
 		{
-			BleDevicesListButtonConnectEvent(buttonIndex);
+			BleDevicesListButtonConnectEvent(index);
 		}
-	}	
-	
-	public void LoadDataInButton(string deviceID, int row)
-	{
-		//transform.GetComponent<RectTransform>().localPosition =  new Vector3( 0.0f , -150.0f*row , 0.0f );
-		//transform.GetComponent<RectTransform>().localScale = new Vector3( 1.0f, 1.0f, 1.0f);
-		buttonTitle.GetComponent<Text>().text = deviceID;
-		buttonIndex = row;
 	}
+
+    void Start()
+    {
+        buttonTitle.GetComponent<Text>().text = title;
+    }
 }

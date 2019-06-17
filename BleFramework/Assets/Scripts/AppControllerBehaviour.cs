@@ -107,11 +107,13 @@ public class AppControllerBehaviour : MonoBehaviour
 	void HandleOnBleDidDisconnectEvent ()
 	{
 		searchBleDevicesButton.GetComponent<Button>().enabled = true;
-	}
+        infoMessage.GetComponent<Text>().text = "Device did disconnect.";
+    }
 
 	void HandleOnBleDidConnectEvent ()
 	{
 		searchBleDevicesButton.GetComponent<Button>().enabled = true;
+        infoMessage.GetComponent<Text>().text = "Device did connect.";
         lastCommand = resetCommand;
 		BLEController.SendData(resetCommand);
 	}
@@ -149,12 +151,6 @@ public class AppControllerBehaviour : MonoBehaviour
 
 	void HandleOnBleDidCompletePeripheralScanEvent (List<object> peripherals)
 	{
-        if (peripherals == null)
-        {
-            Debug.Log("Error: the peripheral is null");
-            DestroyActivityIndicator();
-            return;
-        }
 		int i = 0;
 		foreach (string s in peripherals)
 		{
@@ -165,13 +161,13 @@ public class AppControllerBehaviour : MonoBehaviour
 	}
 	
 	
-	void HandleOnBleDidCompletePeripheralScanErrorEvent (string errorCode)
+	void HandleOnBleDidCompletePeripheralScanErrorEvent (string message)
 	{
 		searchBleDevicesButton.GetComponent<Button>().enabled = true;
+        infoMessage.GetComponent<Text>().text = message;
+        DestroyActivityIndicator();
 		
-		DestroyActivityIndicator();
-		
-		Debug.Log ("AppControllerBehavior: HandleOnBleDidCompletePeripheralScanErrorEvent: Error scanning for BLE peripherals: "+errorCode);
+		Debug.Log ("AppControllerBehavior: HandleOnBleDidCompletePeripheralScanErrorEvent: Error scanning for BLE peripherals: "+message);
 	}
 
 	void HandleSearchBLEDevicesEvent ()
@@ -189,8 +185,9 @@ public class AppControllerBehaviour : MonoBehaviour
 		searchBleDevicesButton.GetComponent<Button>().enabled = false;
 		
 		BLEController.ScanForPeripherals();
-		
-	}
+        infoMessage.GetComponent<Text>().text = "Scanning for devices...";
+
+    }
 	
 	void OnDisable()
 	{

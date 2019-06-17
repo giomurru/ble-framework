@@ -61,7 +61,7 @@ public class BleFramework
     */
     private static final String TAG = BleFramework.class.getSimpleName();
     private static final int REQUEST_ENABLE_BT = 1;
-    private static final long SCAN_PERIOD = 3000;
+    private static final long SCAN_PERIOD = 5000;
     public static final int REQUEST_CODE = 30;
 
     /*
@@ -253,14 +253,13 @@ public class BleFramework
         @Override
         public void onLeScan(final BluetoothDevice device, final int rssi, byte[] scanRecord)
         {
-            Log.d(TAG, "onLeScan: launching runOnUiThread");
             _unityActivity.runOnUiThread(new Runnable() {
                 @Override
                 public void run()
                 {
-                    Log.d(TAG, "onLeScan: run()");
-                    if (device != null)
+                    if (device != null && device.getName()!=null)
                     {
+                        Log.d(TAG, "found device " + device.getName());
                         //don't include duplicates
                         if (_mDevice.indexOf(device) == -1) {
                             _mDevice.add(device);
@@ -330,7 +329,7 @@ public class BleFramework
     public void _ScanForPeripherals(final UnityCallback callback)
     {
         Log.d(TAG, "_ScanForPeripherals: Launching thread for scanning peripherals");
-        _unityActivity.runOnUiThread(new Runnable() {
+        new Thread() {
             @Override
             public void run() {
                 _searchingDevice = true;
@@ -344,15 +343,20 @@ public class BleFramework
 
                 _searchingDevice = false;
                 _mBluetoothAdapter.stopLeScan(mLeScanCallback);
-                String message = "Fail: No device found";
-                if (_mDevice.size() > 0) {
-                    message = "Success";
-                }
-                Log.d(TAG, message);
-                callback.sendMessage(message);
-                ////UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidCompletePeripheralScan, message);
+                // Launch the callback to Unity on the ui thread
+                _unityActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        String message = "Fail: No device found";
+                        if (_mDevice.size() > 0) {
+                            message = "Success";
+                        }
+                        Log.d(TAG, message);
+                        callback.sendMessage(message);
+                    }
+                });
             }
-        });
+        }.start();
     }
 
     public boolean _IsDeviceConnected()
@@ -409,16 +413,12 @@ public class BleFramework
             }
 
             jsonListString = dataUuidsJSON.toString();
-
-            Log.d(TAG, "_GetListOfDevices: sending found devices in JSON: " + jsonListString);
-
         }
         else
         {
-            jsonListString = null;
-            Log.d(TAG, "_GetListOfDevices: no device was found");
+            jsonListString = "{\"data\":[]}";
         }
-
+        Log.d(TAG, "_GetListOfDevices: sending found devices in JSON: " + jsonListString);
         return jsonListString;
     }
 

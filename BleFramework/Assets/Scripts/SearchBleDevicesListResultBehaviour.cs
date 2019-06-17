@@ -17,31 +17,17 @@ public class SearchBleDevicesListResultBehaviour : MonoBehaviour {
 		AppControllerBehaviour.DidStartPeripheralScanEvent += HandleDidStartPeripheralScanEvent;
 		
 		BLEControllerEventHandler.OnBleDidConnectEvent += HandleOnBleDidConnectEvent;
-		BLEControllerEventHandler.OnBleDidDisconnectEvent += HandleOnBleDidDisconnectEvent;
-	}
-
-	void HandleOnBleDidDisconnectEvent ()
-	{
-		infoMessage.SetActive(true);
-		infoMessage.GetComponent<Text>().text = "Device did disconnect.";
 	}
 	
 	void HandleOnBleDidConnectEvent ()
 	{
 		RemoveButtons();
-		infoMessage.SetActive(true);
-		infoMessage.GetComponent<Text>().text = "Device did connect.";
 	}
 	
 	void HandleOnBleDidCompletePeripheralScanErrorEvent(string errorMessage)
 	{
-		//it means no devices were found
-		if (errorMessage == "0")
-		{
-			infoMessage.SetActive(true);
-			infoMessage.GetComponent<Text>().text = "No BLE devices found.";
-		}
-	}
+        infoMessage.GetComponent<Text>().text = errorMessage;
+    }
 	
 	void HandleOnBleDidCompletePeripheralScanEvent (List<object> peripherals)
 	{
@@ -55,7 +41,6 @@ public class SearchBleDevicesListResultBehaviour : MonoBehaviour {
 		AppControllerBehaviour.DidStartPeripheralScanEvent -= HandleDidStartPeripheralScanEvent;
 		
 		BLEControllerEventHandler.OnBleDidConnectEvent -= HandleOnBleDidConnectEvent;
-		BLEControllerEventHandler.OnBleDidDisconnectEvent -= HandleOnBleDidDisconnectEvent;
 	}
 	
 	
@@ -75,25 +60,24 @@ public class SearchBleDevicesListResultBehaviour : MonoBehaviour {
 	
 	void RefreshButtonsOnScreen(List<object> peripherals)
 	{		
-		infoMessage.SetActive(false);
-		
 		int j = 0;
 		
 		foreach (string s in peripherals)
 		{
-			GameObject instanceRow = Instantiate(buttonPrefab, new Vector3 (0.0f,-j*150.0f,0.0f), Quaternion.identity) as GameObject; 
-			instanceRow.name = s;
-			instanceRow.GetComponent<BleDeviceConnectButtonBehaviour>().LoadDataInButton(s, j);
-			instanceRow.transform.SetParent(buttonsPanel.gameObject.transform, false);
-			j++;
+			GameObject instanceRow = Instantiate(buttonPrefab, new Vector3 (0.0f,j*150.0f,0.0f), Quaternion.identity) as GameObject; 
+            instanceRow.GetComponent<BleDeviceConnectButtonBehaviour>().title = s;
+            instanceRow.GetComponent<BleDeviceConnectButtonBehaviour>().index = j;
+            instanceRow.transform.SetParent(buttonsPanel.transform, false);
+            j++;
 		}
-		
-		if (j == 0)
-		{
-			infoMessage.SetActive(true);
-			infoMessage.GetComponent<Text>().text = "No BLE devices found.";
-		}
-		
-		buttonsPanel.GetComponent<RectTransform>().sizeDelta = new Vector2(0.0f, j * 150.0f);
-	}
+
+        infoMessage.GetComponent<Text>().text = (j == 0) ? "No BLE devices found." : "Scan completed.";
+
+        // This part of code creates a bug on UI
+        // TODO: when you add buttons you change the panel size and should update the scrollview content.
+        //Rect panelRect = buttonsPanel.GetComponent<RectTransform>().rect;
+        //float minimumPanelHeight = j * 150.0f;
+        //float panelHeight = panelRect.height < minimumPanelHeight ? minimumPanelHeight : panelRect.height;
+        //buttonsPanel.GetComponent<RectTransform>().sizeDelta = new Vector2(panelRect.width, panelHeight);
+    }
 }

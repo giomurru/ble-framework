@@ -162,7 +162,7 @@
 					if (OnBleDidCompletePeripheralScanErrorEvent != null)
 					{
 						Debug.Log("OnBleDidCompletePeripheralScan: call OnBleDidCompletePeripheralScanErrorEvent: " + message);
-						OnBleDidCompletePeripheralScanErrorEvent("0");
+						OnBleDidCompletePeripheralScanErrorEvent("No device found");
 					}
 				}
 			}

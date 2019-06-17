@@ -31,8 +31,7 @@ public class RBLGattAttributes {
 
 	static {
 		// RBL Services.
-		attributes.put("713d0000-503e-4c75-ba94-3148f18d941e",
-				"BLE Shield Service");
+		attributes.put(BLE_SHIELD_SERVICE, "BLE Shield Service");
 		// RBL Characteristics.
 		attributes.put(BLE_SHIELD_TX, "BLE Shield TX");
 		attributes.put(BLE_SHIELD_RX, "BLE Shield RX");
