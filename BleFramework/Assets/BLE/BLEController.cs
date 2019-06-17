@@ -182,7 +182,19 @@
 			#elif UNITY_ANDROID
             if (Application.platform == RuntimePlatform.Android)
             {
-                result = PluginInstance.Call<bool>("_ConnectPeripheralAtIndex", peripheralIndex);
+                System.Action<string> disconnectCallback = ((string message) =>
+                {
+                    BLEControllerEventHandler.OnBleDidDisconnect(message);
+                });
+                System.Action<string> connectCallback = ((string message) =>
+                {
+                    BLEControllerEventHandler.OnBleDidConnect(message);
+                });
+                System.Action<string> receiveDataCallback = ((string message) =>
+                {
+                    BLEControllerEventHandler.OnBleDidReceiveData(message);
+                });
+                result = PluginInstance.Call<bool>("_ConnectPeripheralAtIndex", new object[] { peripheralIndex, new UnityCallback(connectCallback), new UnityCallback(disconnectCallback), new UnityCallback(receiveDataCallback) });
             }
             #endif
 

@@ -120,7 +120,7 @@ public class AppControllerBehaviour : MonoBehaviour
 
 	void HandleBleDevicesListButtonConnectEvent (int buttonIndex)
 	{
-		Debug.Log ("AppControllerBehavior: HandleBleDevicesListButtonConnectEvent: Calling connect peripheral at index");
+		Debug.Log ("AppControllerBehavior: HandleBleDevicesListButtonConnectEvent: Calling connect peripheral at index: " + buttonIndex);
 		bool result = BLEController.ConnectPeripheralAtIndex(buttonIndex);
 		
 		if (result)

@@ -44,18 +44,23 @@ public class BleFramework
     */
     private static volatile BleFramework _instance;
 
-    /*
+    /* Old method used by UnityPlayer
     Definition of the BLE Unity message methods used to communicate back with Unity.
-    */
+
     public static final String BLEUnityMessageName_OnBleDidInitialize = "OnBleDidInitialize";
     public static final String BLEUnityMessageName_OnBleDidConnect = "OnBleDidConnect";
     public static final String BLEUnityMessageName_OnBleDidCompletePeripheralScan = "OnBleDidCompletePeripheralScan";
     public static final String BLEUnityMessageName_OnBleDidDisconnect = "OnBleDidDisconnect";
     public static final String BLEUnityMessageName_OnBleDidReceiveData = "OnBleDidReceiveData";
+    */
 
     public interface UnityCallback {
         public void sendMessage(String message);
     }
+
+    private UnityCallback onBleDidConnect;
+    private UnityCallback onBleDidDisconnect;
+    private UnityCallback onBleDidReceiveData;
     /*
     Static variables
     */
@@ -144,6 +149,7 @@ public class BleFramework
                 Log.d(TAG, "Connection estabilished with: " + _mDeviceAddress);
                 Log.d(TAG, "Send BLEUnityMessageName_OnBleDidConnect success signal to Unity");
                 //UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidConnect, "Success");
+                onBleDidConnect.sendMessage("Success");
                 //startReadRssi();
             }
             else if (RBLService.ACTION_GATT_DISCONNECTED.equals(action))
@@ -151,7 +157,7 @@ public class BleFramework
                 _connState = false;
                 _flag = false;
                 ////UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidDisconnect, "Success");
-
+                onBleDidDisconnect.sendMessage("Success");
                 Log.d(TAG, "Connection lost");
             }
             else if (RBLService.ACTION_GATT_SERVICES_DISCOVERED.equals(action))
@@ -164,6 +170,7 @@ public class BleFramework
                 Log.d(TAG, "New Data received by the server");
                 _dataRx = intent.getByteArrayExtra(RBLService.EXTRA_DATA);
                 ////UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidReceiveData, String.valueOf(_dataRx.length));
+                onBleDidReceiveData.sendMessage(String.valueOf(_dataRx.length));
             }
             else if (RBLService.ACTION_GATT_RSSI.equals(action))
             {
@@ -295,7 +302,6 @@ public class BleFramework
         {
             Log.d(TAG,"onCreate: fail: missing FEATURE_BLUETOOTH_LE");
             ////UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidInitialize, "Fail: missing Bluetooth LE");
-            //finish();
             callback.sendMessage("Fail: missing Bluetooth LE");
             return;
         }
@@ -305,9 +311,8 @@ public class BleFramework
         if (_mBluetoothAdapter == null)
         {
             Log.d(TAG,"onCreate: fail: _mBluetoothAdapter is null");
-            ////UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidInitialize, "Fail: missing Bluetooth adapter");
-            //finish();
             callback.sendMessage("Fail: missing Bluetooth adapter");
+            ////UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidInitialize, "Fail: missing Bluetooth adapter");
             return;
         }
         if (!_mBluetoothAdapter.isEnabled())
@@ -422,13 +427,16 @@ public class BleFramework
         return jsonListString;
     }
 
-    public boolean _ConnectPeripheralAtIndex(int peripheralIndex)
+    public boolean _ConnectPeripheralAtIndex(int peripheralIndex, final UnityCallback connectCallback, final UnityCallback disconnectCallback, final UnityCallback receiveDataCallback)
     {
-        Log.d(TAG,"_ConnectPeripheralAtIndex: " + peripheralIndex);
+        Log.d(TAG,"_ConnectPeripheralAtIndex: " + String.valueOf(peripheralIndex));
         BluetoothDevice device = _mDevice.get(peripheralIndex);
 
         _mDeviceAddress = device.getAddress();
         _mDeviceName = device.getName();
+        onBleDidConnect = connectCallback;
+        onBleDidDisconnect = disconnectCallback;
+        onBleDidReceiveData = receiveDataCallback;
 
         Intent gattServiceIntent = new Intent(_unityActivity, RBLService.class);
         _unityActivity.bindService(gattServiceIntent, _mServiceConnection, _unityActivity.BIND_AUTO_CREATE);
