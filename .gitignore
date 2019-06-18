@@ -26,3 +26,6 @@ _Export/
 
 bleframework-release.aar
 bleframework-release.aar.meta
+
+BleFramework/Assets/Editor.meta
+BleFramework/Assets/Editor/
