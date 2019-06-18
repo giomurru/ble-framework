@@ -9,12 +9,12 @@ int loopCounter;
   
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(57600);
+  Serial.begin(9600);
   Serial1.begin(57600);
   
   carController.Init();
   //readyForNewCommand = true;
-  Serial.println("Setup");
+  Serial.println("Ready");
   //randomSeed(analogRead(1));
   loopCounter = 0;
 }
@@ -90,11 +90,13 @@ void loop()
     carController.SetLeftWheelSpeed(leftWheelVelocity);
     ackData[0] = 0xfe; // signal success
   } else if (resetReceived) {
+    Serial.print("prepare ackData packet");
     ackData[0] = 0xfe; // signal success
   } else {
     ackData[0] = 0xdf; // signal an error (server should retry sending the data)
   }
-  
+
+  Serial.print("send ackData packet");
   Serial1.write(ackData, 1);
   
   Serial.print("end loop ");
