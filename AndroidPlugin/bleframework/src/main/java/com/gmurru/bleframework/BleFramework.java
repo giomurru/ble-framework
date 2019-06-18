@@ -1,6 +1,5 @@
 package com.gmurru.bleframework;
 
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -17,7 +16,6 @@ import android.content.ComponentName;
 import android.content.pm.PackageManager;
 
 import android.os.IBinder;
-import android.os.Bundle;
 
 import android.util.Log;
 ////import com.unity3d.player.UnityPlayer;
@@ -59,6 +57,7 @@ public class BleFramework
     }
 
     private UnityCallback onBleDidConnect;
+    private UnityCallback onBleDidDiscoverService;
     private UnityCallback onBleDidDisconnect;
     private UnityCallback onBleDidReceiveData;
     /*
@@ -78,7 +77,7 @@ public class BleFramework
     The latest received data
     */
     private byte[] _dataRx = new byte[3];
-
+    private byte[] _dataTx;
     /*
     Bluetooth service
     */
@@ -163,7 +162,13 @@ public class BleFramework
             else if (RBLService.ACTION_GATT_SERVICES_DISCOVERED.equals(action))
             {
                 Log.d(TAG, "Service discovered! Registering GattService ACTION_GATT_SERVICES_DISCOVERED");
-                getGattService(_mBluetoothLeService.getSupportedGattService());
+                BluetoothGattService gattService = _mBluetoothLeService.getSupportedGattService();
+                if (gattService != null) {
+                    //getGattService(gattService);
+                    onBleDidDiscoverService.sendMessage("Success");
+                } else {
+                    onBleDidDiscoverService.sendMessage("Failure");
+                }
             }
             else if (RBLService.ACTION_DATA_AVAILABLE.equals(action))
             {
@@ -184,7 +189,7 @@ public class BleFramework
     METHODS DEFINITION
     */
 
-    public BleFramework(Activity activity)
+    private BleFramework(Activity activity)
     {
         Log.d(TAG, "BleFramework: saving unityActivity in private var.");
         this._unityActivity = activity;
@@ -199,9 +204,8 @@ public class BleFramework
 
         intentFilter.addAction(RBLService.ACTION_GATT_CONNECTED);
         intentFilter.addAction(RBLService.ACTION_GATT_DISCONNECTED);
-        //intentFilter.addAction(RBLService.ACTION_GATT_SERVICES_DISCOVERED);
-        //intentFilter.addAction(RBLService.ACTION_DATA_AVAILABLE);
-        intentFilter.addAction(RBLService.ACTION_GATT_RSSI);
+        intentFilter.addAction(RBLService.ACTION_GATT_SERVICES_DISCOVERED);
+        intentFilter.addAction(RBLService.ACTION_DATA_AVAILABLE);
 
         return intentFilter;
     }
@@ -238,10 +242,6 @@ public class BleFramework
 
     private void getGattService(BluetoothGattService gattService)
     {
-
-        if (gattService == null)
-            return;
-
         BluetoothGattCharacteristic characteristic = gattService.getCharacteristic(RBLService.UUID_BLE_SHIELD_TX);
         _map.put(characteristic.getUuid(), characteristic);
 
@@ -266,7 +266,7 @@ public class BleFramework
                 {
                     if (device != null && device.getName()!=null)
                     {
-                        Log.d(TAG, "found device " + device.getName());
+                        Log.d(TAG, "found device " + device.getName() + "with address " + device.getAddress());
                         //don't include duplicates
                         if (_mDevice.indexOf(device) == -1) {
                             _mDevice.add(device);
@@ -318,6 +318,8 @@ public class BleFramework
         if (!_mBluetoothAdapter.isEnabled())
         {
             Log.d(TAG,"registerBleUpdatesReceiver: WARNING: _mBluetoothAdapter is not enabled!");
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            _unityActivity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
             callback.sendMessage("Fail: Bluetooth is not enabled");
             ////UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidInitialize, "Fail: Bluetooth is not enabled");
             return;
@@ -427,21 +429,24 @@ public class BleFramework
         return jsonListString;
     }
 
-    public boolean _ConnectPeripheralAtIndex(int peripheralIndex, final UnityCallback connectCallback, final UnityCallback disconnectCallback, final UnityCallback receiveDataCallback)
+    public boolean _ConnectPeripheralAtIndex(int peripheralIndex, final UnityCallback connectCallback, final UnityCallback disconnectCallback, final UnityCallback receiveDataCallback, final UnityCallback readyForDataCallback)
     {
+        boolean success = false;
         Log.d(TAG,"_ConnectPeripheralAtIndex: " + String.valueOf(peripheralIndex));
         BluetoothDevice device = _mDevice.get(peripheralIndex);
-
         _mDeviceAddress = device.getAddress();
         _mDeviceName = device.getName();
-        onBleDidConnect = connectCallback;
-        onBleDidDisconnect = disconnectCallback;
-        onBleDidReceiveData = receiveDataCallback;
 
-        Intent gattServiceIntent = new Intent(_unityActivity, RBLService.class);
-        _unityActivity.bindService(gattServiceIntent, _mServiceConnection, _unityActivity.BIND_AUTO_CREATE);
-
-        return true;
+        if (_mDeviceAddress != null && _mDeviceName != null) {
+            onBleDidConnect = connectCallback;
+            onBleDidDisconnect = disconnectCallback;
+            onBleDidReceiveData = receiveDataCallback;
+            onBleDidDiscoverService = readyForDataCallback;
+            Intent gattServiceIntent = new Intent(_unityActivity, RBLService.class);
+            _unityActivity.bindService(gattServiceIntent, _mServiceConnection, Activity.BIND_AUTO_CREATE);
+            success = true;
+        }
+        return success;
     }
 
     public boolean _ConnectPeripheral(String peripheralID)
@@ -456,7 +461,7 @@ public class BleFramework
                 _mDeviceName = device.getName();
 
                 Intent gattServiceIntent = new Intent(_unityActivity, RBLService.class);
-                _unityActivity.bindService(gattServiceIntent, _mServiceConnection, _unityActivity.BIND_AUTO_CREATE);
+                _unityActivity.bindService(gattServiceIntent, _mServiceConnection, Activity.BIND_AUTO_CREATE);
 
                 return true;
             }
@@ -474,18 +479,26 @@ public class BleFramework
     public void _SendData(byte[] data)
     {
         Log.d(TAG,"_SendData: ");
+        BluetoothGattService gattService = _mBluetoothLeService.getSupportedGattService();
+        BluetoothGattCharacteristic characteristicTx = gattService.getCharacteristic(RBLService.UUID_BLE_SHIELD_TX);
+        if (characteristicTx != null) {
 
-        BluetoothGattCharacteristic characteristic = _map.get(RBLService.UUID_BLE_SHIELD_TX);
-        Log.d(TAG, "Set data in the _characteristicTx");
-        byte[] tx = hexStringToByteArray("fefefe");
-        characteristic.setValue(tx);
+            Log.d(TAG, "Set data in the _characteristicTx");
+            _dataTx = Arrays.copyOf(data, data.length);
 
-        Log.d(TAG, "Write _characteristicTx in the _mBluetoothLeService: " + tx[0] + " " + tx[1] + " " + tx[2]);
-        if (_mBluetoothLeService==null)
-        {
-            Log.d(TAG, "_mBluetoothLeService is null");
+            if (characteristicTx.setValue(_dataTx)) {
+                _mBluetoothLeService.writeCharacteristic(characteristicTx);
+                BluetoothGattCharacteristic characteristicRx = gattService.getCharacteristic(RBLService.UUID_BLE_SHIELD_RX);
+                _mBluetoothLeService.setCharacteristicNotification(characteristicRx,
+                        true);
+                //_mBluetoothLeService.readCharacteristic(characteristicRx);
+            } else {
+                Log.d(TAG,"Error: failed setValue on the characteristic");
+            }
+
+        } else {
+            Log.d(TAG, "Error: the BluetoothGattCharacteristic is NULL");
         }
-        _mBluetoothLeService.writeCharacteristic(characteristic);
 
     }
 
@@ -507,15 +520,5 @@ public class BleFramework
         }
 
         return _instance;
-    }
-
-    public static byte[] hexStringToByteArray(String s) {
-        int len = s.length();
-        byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-                    + Character.digit(s.charAt(i+1), 16));
-        }
-        return data;
     }
 }

@@ -86,7 +86,7 @@ public class RBLService extends Service {
 			} else {
 				Log.w(TAG, "onReadRemoteRssi received: " + status);
 			}
-		};
+		}
 
 		@Override
 		public void onServicesDiscovered(BluetoothGatt gatt, int status) {
@@ -132,8 +132,15 @@ public class RBLService extends Service {
 		// carried out as per profile specifications:
 		// http://developer.bluetooth.org/gatt/characteristics/Pages/CharacteristicViewer.aspx?u=org.bluetooth.characteristic.heart_rate_measurement.xml
 		if (UUID_BLE_SHIELD_RX.equals(characteristic.getUuid())) {
-			final byte[] rx = characteristic.getValue();
-			intent.putExtra(EXTRA_DATA, rx);
+			final byte[] data = characteristic.getValue();
+//			if (data != null && data.length > 0) {
+//				final StringBuilder stringBuilder = new StringBuilder(data.length);
+//				for(byte byteChar : data)
+//					stringBuilder.append(String.format("%02X ", byteChar));
+//				intent.putExtra(EXTRA_DATA, new String(data) + "\n" +
+//						stringBuilder.toString());
+//			}
+			intent.putExtra(EXTRA_DATA, data);
 		}
 
 		sendBroadcast(intent);
@@ -277,7 +284,9 @@ public class RBLService extends Service {
 			return;
 		}
 
-		mBluetoothGatt.readCharacteristic(characteristic);
+		if (!mBluetoothGatt.readCharacteristic(characteristic)) {
+			Log.d(TAG, "error reading the data from the charactersitic");
+		}
 	}
 
 	public void readRssi() {
@@ -295,7 +304,9 @@ public class RBLService extends Service {
 			return;
 		}
 
-		mBluetoothGatt.writeCharacteristic(characteristic);
+		if (!mBluetoothGatt.writeCharacteristic(characteristic)) {
+			Log.d(TAG, "error writing the data to the charactersitic");
+		}
 	}
 
 	/**

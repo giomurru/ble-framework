@@ -188,13 +188,18 @@
                 });
                 System.Action<string> connectCallback = ((string message) =>
                 {
-                    BLEControllerEventHandler.OnBleDidConnect(message);
+                    Debug.Log("BLE Did Connect but wait for service discover before trasmitting.");
+                    //BLEControllerEventHandler.OnBleDidConnect(message);
                 });
                 System.Action<string> receiveDataCallback = ((string message) =>
                 {
                     BLEControllerEventHandler.OnBleDidReceiveData(message);
                 });
-                result = PluginInstance.Call<bool>("_ConnectPeripheralAtIndex", new object[] { peripheralIndex, new UnityCallback(connectCallback), new UnityCallback(disconnectCallback), new UnityCallback(receiveDataCallback) });
+                System.Action<string> readyForDataCallback = ((string message) =>
+                {
+                    BLEControllerEventHandler.OnBleDidConnect(message);
+                });
+                result = PluginInstance.Call<bool>("_ConnectPeripheralAtIndex", new object[] { peripheralIndex, new UnityCallback(connectCallback), new UnityCallback(disconnectCallback), new UnityCallback(receiveDataCallback), new UnityCallback(readyForDataCallback) });
             }
             #endif
 

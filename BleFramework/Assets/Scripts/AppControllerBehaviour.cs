@@ -22,8 +22,8 @@ public class AppControllerBehaviour : MonoBehaviour
 
     private byte[] lastCommand;
 
-    private readonly byte[] resetCommand = {0xfe, 0xfe, 0xfe};
-    private readonly byte[][] listOfCommands = {
+    private byte[] resetCommand = { 0xfe, 0xfe, 0xfe };
+    private byte[][] listOfCommands = {
         new byte[] { 0x11, 0x00, 0xff }, // left command
         new byte[] { 0x11, 0xff, 0x00 }, // right command
         new byte[] { 0x11, 0xff, 0xff }, // forward command
@@ -32,6 +32,9 @@ public class AppControllerBehaviour : MonoBehaviour
 
     private int currentCommandIndex;
 
+    public const int AppBuildNumber = 33;
+
+    public const string AppBundleVersion = "1.0";
 
     void Awake()
     {

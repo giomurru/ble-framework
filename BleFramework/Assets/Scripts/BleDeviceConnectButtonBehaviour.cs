@@ -12,8 +12,13 @@ public class BleDeviceConnectButtonBehaviour : MonoBehaviour {
 
     public string title;
 	public int index;
-	
-	public void ExecuteBleDevicesListButtonAction()
+    bool needsUpdate = false;
+
+    private void Awake()
+    {
+        needsUpdate = true;
+    }
+    public void ExecuteBleDevicesListButtonAction()
 	{
 		if (BleDevicesListButtonConnectEvent!=null)
 		{
@@ -21,8 +26,13 @@ public class BleDeviceConnectButtonBehaviour : MonoBehaviour {
 		}
 	}
 
-    void Start()
+    void Update()
     {
-        buttonTitle.GetComponent<Text>().text = title;
+        if (needsUpdate)
+        {
+            needsUpdate = false;
+            Debug.Log("Setting button title to:" + title);
+            buttonTitle.GetComponent<Text>().text = title;
+        }
     }
 }
