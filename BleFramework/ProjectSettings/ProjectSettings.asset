@@ -156,10 +156,10 @@ PlayerSettings:
     Android: com.gmurru.bleapp
     Standalone: unity.gmurru.UnityBLE
     Tizen: com.gmurru.bleframework
-    iOS: com.gmurru.bleframework
+    iOS: com.gmurru.bleapp
     tvOS: com.gmurru.bleframework
   buildNumber:
-    iOS: 14
+    iOS: 33
   AndroidBundleVersionCode: 33
   AndroidMinSdkVersion: 18
   AndroidTargetSdkVersion: 28
