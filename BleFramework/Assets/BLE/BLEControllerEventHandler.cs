@@ -10,29 +10,20 @@
 		
 		
 		//native events
-		public delegate void OnBleDidConnectEventDelegate();
+		public delegate void OnBleDidConnectEventDelegate(string error);
 		public static event OnBleDidConnectEventDelegate OnBleDidConnectEvent;
 		
-		public delegate void OnBleDidDisconnectEventDelegate();
+		public delegate void OnBleDidDisconnectEventDelegate(string error);
 		public static event OnBleDidDisconnectEventDelegate OnBleDidDisconnectEvent;
 		
 		public delegate void OnBleDidReceiveDataEventDelegate(byte[] data, int numOfBytes);
 		public static event OnBleDidReceiveDataEventDelegate OnBleDidReceiveDataEvent;
 		
-		public delegate void OnBleDidInitializeEventDelegate(string errorMessage);
+		public delegate void OnBleDidInitializeEventDelegate(string error);
 		public static event OnBleDidInitializeEventDelegate OnBleDidInitializeEvent;
 		
-		public delegate void OnBleDidCompletePeripheralScanEventDelegate(List<object> peripherals);
+		public delegate void OnBleDidCompletePeripheralScanEventDelegate(List<object> peripherals, string error);
 		public static event OnBleDidCompletePeripheralScanEventDelegate OnBleDidCompletePeripheralScanEvent;
-		
-		public delegate void OnBleDidConnectErrorEventDelegate(string errorMessage);
-		public static event OnBleDidConnectErrorEventDelegate OnBleDidConnectErrorEvent;
-				
-		public delegate void OnBleDidDisconnectErrorEventDelegate(string errorMessage);
-		public static event OnBleDidDisconnectErrorEventDelegate OnBleDidDisconnectErrorEvent;
-		
-		public delegate void OnBleDidCompletePeripheralScanErrorEventDelegate(string errorMessage);
-		public static event OnBleDidCompletePeripheralScanErrorEventDelegate OnBleDidCompletePeripheralScanErrorEvent;
 		
 
         //Instance methods used by iOS Unity Send Message
@@ -43,15 +34,8 @@
 
 		public static void OnBleDidInitialize(string message)
 		{
-            string errorMessage = null;
-            if (message!="Success")
-            {
-                errorMessage = message;
-            }
-            if (OnBleDidInitializeEvent != null)
-            {
-                OnBleDidInitializeEvent(errorMessage);
-            }
+            string errorMessage = message != "Success" ? message : null;
+            OnBleDidInitializeEvent?.Invoke(errorMessage);
         }
 
 
@@ -61,18 +45,9 @@
 		}
 		public static void OnBleDidConnect(string message)
 		{
-			if (message=="Success")
-			{
-				if (OnBleDidConnectEvent!=null)
-				{
-					OnBleDidConnectEvent();
-				}
-			}
-			else if (OnBleDidConnectErrorEvent!=null)
-			{
-				OnBleDidConnectErrorEvent(message);
-			}
-		}
+            string errorMessage = message != "Success" ? message : null;
+            OnBleDidConnectEvent?.Invoke(errorMessage);
+        }
 
 		void OnBleDidDisconnectMessage(string message)
 		{
@@ -80,18 +55,9 @@
 		}
 		public static void OnBleDidDisconnect(string message)
 		{
-			if (message=="Success")
-			{
-				if (OnBleDidDisconnectEvent!=null)
-				{
-					OnBleDidDisconnectEvent();
-				}
-			}
-			else if (OnBleDidDisconnectErrorEvent!=null)
-			{
-				OnBleDidDisconnectErrorEvent(message);
-			}
-		}
+            string errorMessage = message != "Success" ? message : null;
+            OnBleDidDisconnectEvent?.Invoke(errorMessage);
+        }
 
 		void OnBleDidReceiveDataMessage(string message)
 		{
@@ -107,17 +73,12 @@
                     Debug.Log("BLEController.GetData(); start");
                     byte[] data = BLEController.GetData(numOfBytes);
                     Debug.Log("BLEController.GetData(); end");
-                    if (OnBleDidReceiveDataEvent != null)
-                    {
-                        OnBleDidReceiveDataEvent(data, numOfBytes);
-                    }
+                    OnBleDidReceiveDataEvent?.Invoke(data, numOfBytes);
                 } else
                 {
                     Debug.Log("WARNING: did receive OnBleDidReceiveData even if numOfBytes is zero");
                 }
 			}
-			
-
 		}
 
 		void OnBleDidCompletePeripheralScanMessage(string message)
@@ -126,40 +87,21 @@
 		}
 		public static void OnBleDidCompletePeripheralScan(string message)
 		{
-			if (message != "Success") {
-				Debug.Log("OnBleDidCompletePeripheralScan: message is not success");
-				if (OnBleDidCompletePeripheralScanErrorEvent!=null) {
-					Debug.Log("OnBleDidCompletePeripheralScan: call OnBleDidCompletePeripheralScanErrorEvent: " + message);
-					OnBleDidCompletePeripheralScanErrorEvent(message);
-				}
-			}
-			else {
-				Debug.Log("call BLEController.GetListOfDevices()");
-				string peripheralJsonList = BLEController.GetListOfDevices();
-				Debug.Log("the json list is "+ peripheralJsonList);
-				if (peripheralJsonList != null) {
-					Dictionary<string, object> dictObject = Json.Deserialize(peripheralJsonList) as Dictionary<string, object>;
+            string errorMessage = message != "Success" ? message : null;
+            List<object> peripheralsList = new List<object>();
+            string peripheralJsonList = (errorMessage == null) ? BLEController.GetListOfDevices() : null;
+            if (peripheralJsonList != null)
+            {
+                Dictionary<string, object> dictObject = Json.Deserialize(peripheralJsonList) as Dictionary<string, object>;
 
-					object receivedByteDataArray;
-					List<object> peripheralsList = new List<object>();
-					if (dictObject.TryGetValue("data", out receivedByteDataArray)) {
-						Debug.Log("OnBleDidCompletePeripheralScan: I received the peripheral list");
-						peripheralsList = (List<object>)receivedByteDataArray;
-						Debug.Log("OnBleDidCompletePeripheralScan: I set the peripheral list");
-					}
+                object receivedByteDataArray;
+                if (dictObject.TryGetValue("data", out receivedByteDataArray))
+                {
+                    peripheralsList = (List<object>)receivedByteDataArray;
+                }
+            }
 
-					if (OnBleDidCompletePeripheralScanEvent != null) {
-						Debug.Log("OnBleDidCompletePeripheralScan: I call OnBleDidCompletePeripheralScanEvent");
-						OnBleDidCompletePeripheralScanEvent(peripheralsList);
-					}
-				} else {
-					if (OnBleDidCompletePeripheralScanErrorEvent != null)
-					{
-						Debug.Log("OnBleDidCompletePeripheralScan: call OnBleDidCompletePeripheralScanErrorEvent: " + message);
-						OnBleDidCompletePeripheralScanErrorEvent("No device found");
-					}
-				}
-			}
-		}
+            OnBleDidCompletePeripheralScanEvent?.Invoke(peripheralsList, errorMessage);
+        }
 	}
 }

@@ -13,33 +13,30 @@ public class SearchBleDevicesListResultBehaviour : MonoBehaviour {
 	void OnEnable()
 	{
 		BLEControllerEventHandler.OnBleDidCompletePeripheralScanEvent += HandleOnBleDidCompletePeripheralScanEvent;
-		BLEControllerEventHandler.OnBleDidCompletePeripheralScanErrorEvent += HandleOnBleDidCompletePeripheralScanErrorEvent;
 		AppControllerBehaviour.DidStartPeripheralScanEvent += HandleDidStartPeripheralScanEvent;
-		
 		BLEControllerEventHandler.OnBleDidConnectEvent += HandleOnBleDidConnectEvent;
 	}
 	
-	void HandleOnBleDidConnectEvent ()
+	void HandleOnBleDidConnectEvent (string errorMessage)
 	{
-		RemoveButtons();
+        if (errorMessage == null)
+        {
+            RemoveButtons();
+        }
 	}
 	
-	void HandleOnBleDidCompletePeripheralScanErrorEvent(string errorMessage)
+	void HandleOnBleDidCompletePeripheralScanEvent (List<object> peripherals, string errorMessage)
 	{
-        infoMessage.GetComponent<Text>().text = errorMessage;
-    }
-	
-	void HandleOnBleDidCompletePeripheralScanEvent (List<object> peripherals)
-	{
-		RefreshButtonsOnScreen(peripherals);
+        if (errorMessage == null)
+        {
+            RefreshButtonsOnScreen(peripherals);
+        }
 	}
 	
 	void OnDisable()
 	{
 		BLEControllerEventHandler.OnBleDidCompletePeripheralScanEvent -= HandleOnBleDidCompletePeripheralScanEvent;
-		BLEControllerEventHandler.OnBleDidCompletePeripheralScanErrorEvent -= HandleOnBleDidCompletePeripheralScanErrorEvent;
 		AppControllerBehaviour.DidStartPeripheralScanEvent -= HandleDidStartPeripheralScanEvent;
-		
 		BLEControllerEventHandler.OnBleDidConnectEvent -= HandleOnBleDidConnectEvent;
 	}
 	

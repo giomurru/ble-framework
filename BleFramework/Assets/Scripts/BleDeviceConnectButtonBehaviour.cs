@@ -20,11 +20,8 @@ public class BleDeviceConnectButtonBehaviour : MonoBehaviour {
     }
     public void ExecuteBleDevicesListButtonAction()
 	{
-		if (BleDevicesListButtonConnectEvent!=null)
-		{
-			BleDevicesListButtonConnectEvent(index);
-		}
-	}
+        BleDevicesListButtonConnectEvent?.Invoke(index);
+    }
 
     void Update()
     {

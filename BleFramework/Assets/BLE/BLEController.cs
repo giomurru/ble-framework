@@ -239,7 +239,8 @@
                 if (result == 0)
                 {
                     Debug.Log("success in getting data");
-                } else
+                }
+                else
                 {
                     Debug.Log("failure in getting data");
                 }
