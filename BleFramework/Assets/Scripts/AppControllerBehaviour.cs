@@ -76,7 +76,6 @@ public class AppControllerBehaviour : MonoBehaviour
 		BLEControllerEventHandler.OnBleDidCompletePeripheralScanEvent += HandleOnBleDidCompletePeripheralScanEvent;
 		BLEControllerEventHandler.OnBleDidCompletePeripheralScanErrorEvent += HandleOnBleDidCompletePeripheralScanErrorEvent;
 		BLEControllerEventHandler.OnBleDidInitializeEvent += HandleOnBleDidInitializeEvent;
-		BLEControllerEventHandler.OnBleDidInitializeErrorEvent += HandleOnBleDidInitializeErrorEvent;
 		BLEControllerEventHandler.OnBleDidConnectEvent += HandleOnBleDidConnectEvent;
 		BLEControllerEventHandler.OnBleDidDisconnectEvent += HandleOnBleDidDisconnectEvent;
 		BLEControllerEventHandler.OnBleDidReceiveDataEvent += HandleOnBleDidReceiveDataEvent;
@@ -136,20 +135,13 @@ public class AppControllerBehaviour : MonoBehaviour
 		}
 	}
 
-	void HandleOnBleDidInitializeErrorEvent (string errorMessage)
+	void HandleOnBleDidInitializeEvent (string errorMessage)
 	{
-		infoMessage.GetComponent<Text>().text = "BleFramework initialization: " + errorMessage;
-		
-		searchBleDevicesButton.GetComponent<Button>().enabled = false;
-		Debug.Log ("AppControllerBehavior: HandleOnBleDidInitializeErrorEvent: Error Message: " + errorMessage);
-	}
-
-	void HandleOnBleDidInitializeEvent ()
-	{
-		infoMessage.GetComponent<Text>().text = "BleFramework initialization: SUCCESS";
+        bool initDidSucceed = errorMessage == null;
+		infoMessage.GetComponent<Text>().text = initDidSucceed ? "BleFramework initialization: SUCCESS" : ("BleFramework initialization: " + errorMessage);
 		
 		Debug.Log("AppControllerBehavior: HandleOnBleDidInitializeEvent: The BLE module did initialize correctly");
-		searchBleDevicesButton.GetComponent<Button>().enabled = true;
+		searchBleDevicesButton.GetComponent<Button>().enabled = initDidSucceed;
 	}
 
 	void HandleOnBleDidCompletePeripheralScanEvent (List<object> peripherals)
@@ -199,7 +191,6 @@ public class AppControllerBehaviour : MonoBehaviour
 		BLEControllerEventHandler.OnBleDidCompletePeripheralScanEvent -= HandleOnBleDidCompletePeripheralScanEvent;
 		BLEControllerEventHandler.OnBleDidCompletePeripheralScanErrorEvent -= HandleOnBleDidCompletePeripheralScanErrorEvent;
 		BLEControllerEventHandler.OnBleDidInitializeEvent -= HandleOnBleDidInitializeEvent;
-		BLEControllerEventHandler.OnBleDidInitializeErrorEvent -= HandleOnBleDidInitializeErrorEvent;
 		BLEControllerEventHandler.OnBleDidConnectEvent -= HandleOnBleDidConnectEvent;
 		BLEControllerEventHandler.OnBleDidDisconnectEvent -= HandleOnBleDidDisconnectEvent;
 		BLEControllerEventHandler.OnBleDidReceiveDataEvent -= HandleOnBleDidReceiveDataEvent;
