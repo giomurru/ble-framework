@@ -9,7 +9,10 @@ The supported boards are:
 
 The ReadBearLab BLE boards can be attached to a micro controller such as Arduino to allow simple wireless serial communication with your mobile device.
 
-The sample Unity project inside the folder Unity contains a sample Scene to get started using the framework.
+The sample Unity project inside the folder Unity contains two sample scenes to get started using the framework.
+1) RobotServer: build this scene for testing BleMini with Arduino Mega + Adafruit Motor Shield with 4 DC Motors. The code for Arduino is inside the folder Arduino/RobotClient
+2) MeteoStation: build this scene for testing BleMini with Arduino Mega + Sparkfun RTH03 temperature and humidity sensor.
+
 
 Before building the Unity project for Android targets, you need to generate the android plugin using the AndroidPlugin project. You can open this project using Android Studio, then click on Run 'copyPlugin' to generate and copy the plugin in the BleFramework/Assets/Plugin/Android folder.
 Now you are ready to build the Unity project for Android targets. 
