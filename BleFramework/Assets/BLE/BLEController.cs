@@ -28,8 +28,11 @@
 		
 		[DllImport ("__Internal")]
 		private static extern bool _ConnectPeripheral(string peripheralID);
-		
-		[DllImport ("__Internal")]
+
+        [DllImport("__Internal")]
+        private static extern void _Disconnect();
+
+        [DllImport ("__Internal")]
 		private static extern void _SendData(byte[] buffer, int length);
 
 		[DllImport ("__Internal")]
@@ -225,6 +228,16 @@
 			
 			return result;
 		}
+
+        public static void Disconnect()
+        {
+#if UNITY_IPHONE
+            if (Application.platform == RuntimePlatform.IPhonePlayer)
+            {
+                _Disconnect();
+            }
+#endif
+        }
 
 		public static byte[] GetData(int length)
 		{

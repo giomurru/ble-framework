@@ -29,7 +29,7 @@ public class SearchBleDevicesListResultBehaviour : MonoBehaviour {
 	{
         if (errorMessage == null)
         {
-            RefreshButtonsOnScreen(peripherals);
+            CreateConnectButtonsFor(peripherals);
         }
 	}
 	
@@ -55,7 +55,7 @@ public class SearchBleDevicesListResultBehaviour : MonoBehaviour {
 	}
 	
 	
-	void RefreshButtonsOnScreen(List<object> peripherals)
+	void CreateConnectButtonsFor(List<object> peripherals)
 	{		
 		int j = 0;
 		
@@ -67,8 +67,6 @@ public class SearchBleDevicesListResultBehaviour : MonoBehaviour {
             instanceRow.transform.SetParent(buttonsPanel.transform, false);
             j++;
 		}
-
-        infoMessage.GetComponent<Text>().text = (j == 0) ? "No BLE devices found." : "Scan completed.";
 
         // This part of code creates a bug on UI
         // TODO: when you add buttons you change the panel size and should update the scrollview content.

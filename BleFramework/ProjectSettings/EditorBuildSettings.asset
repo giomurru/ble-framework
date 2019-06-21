@@ -6,4 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/MainScene.unity
+    path: Assets/Scenes/RobotServer.unity
+    guid: 94e8dad31960b4ecba5c14d14900a7b6
+  m_configObjects: {}

@@ -15,22 +15,22 @@ public class AppControllerBehaviour : MonoBehaviour
 	
 	public delegate void DidStartPeripheralScanEventDelegate();
 	public static event DidStartPeripheralScanEventDelegate DidStartPeripheralScanEvent;
-	
-	public GameObject searchBleDevicesListResult;
+
+    public delegate void DidReceiveDataEventDelegate(byte[] data, int numOfBytes);
+    public static event DidReceiveDataEventDelegate DidReceiveDataEvent;
+
+    public delegate void ConnectionLostEventDelegate();
+    public static event ConnectionLostEventDelegate ConnectionLostEvent;
+
+    public delegate void ConnectionEstablishedEventDelegate();
+    public static event ConnectionEstablishedEventDelegate ConnectionEstablishedEvent;
+
+    public GameObject searchBleDevicesListResult;
 	public GameObject searchBleDevicesButton;
+    public GameObject disconnectButton;
 	public GameObject infoMessage;
 
-    private byte[] lastCommand;
-
-    private byte[] resetCommand = { 0xfe, 0xfe, 0xfe };
-    private byte[][] listOfCommands = {
-        new byte[] { 0x11, 0x00, 0xff }, // left command
-        new byte[] { 0x11, 0xff, 0x00 }, // right command
-        new byte[] { 0x11, 0xff, 0xff }, // forward command
-        new byte[] { 0x11, 0x00, 0x00 }  // stop command
-    };
-
-    private int currentCommandIndex;
+    
 
     public const int AppBuildNumber = 33;
 
@@ -38,8 +38,8 @@ public class AppControllerBehaviour : MonoBehaviour
 
     void Awake()
     {
-        currentCommandIndex = 0;
-        searchBleDevicesButton.GetComponent<Button>().enabled = false;
+        searchBleDevicesButton.SetActive(false);
+        disconnectButton.SetActive(false);
     }
 	
 	void Start () 
@@ -72,6 +72,7 @@ public class AppControllerBehaviour : MonoBehaviour
 	void OnEnable()
 	{
 		SearchBLEDevicesBehaviour.SearchBLEDevicesEvent += HandleSearchBLEDevicesEvent;
+        DisconnectButtonBehaviour.DisconnectButtonEvent += HandleDisconnectButtonEvent;
 		BleDeviceConnectButtonBehaviour.BleDevicesListButtonConnectEvent += HandleBleDevicesListButtonConnectEvent;
 		BLEControllerEventHandler.OnBleDidCompletePeripheralScanEvent += HandleOnBleDidCompletePeripheralScanEvent;
 		BLEControllerEventHandler.OnBleDidInitializeEvent += HandleOnBleDidInitializeEvent;
@@ -83,27 +84,8 @@ public class AppControllerBehaviour : MonoBehaviour
 	void HandleOnBleDidReceiveDataEvent (byte[] data, int numOfBytes)
 	{
 		Debug.Log("AppControllerBehavior: HandleOnBleDidReceiveDataEvent: size: " + numOfBytes);
-
-        if (numOfBytes == 1 && data[0] == 0xfe)
-        {
-            Debug.Log("Command correctly received. Can send next command.");
-            if (currentCommandIndex >= listOfCommands.Length) { currentCommandIndex = 0; }
-            lastCommand = listOfCommands[currentCommandIndex];
-            currentCommandIndex += 1;
-            //send last command in 3 seconds!
-            StartCoroutine(SendLastCommandAfterDelay(3));
-        } else if (numOfBytes == 1 && data[0] == 0xdf)
-        {
-            Debug.Log("There was an error sending the command. Retry to send last command.");
-            BLEController.SendData(lastCommand);
-        }
+        DidReceiveDataEvent?.Invoke(data, numOfBytes);
 	}
-
-    IEnumerator SendLastCommandAfterDelay(int delay)
-    {
-        yield return new WaitForSeconds(delay);
-        BLEController.SendData(lastCommand);
-    }
 
 	void HandleOnBleDidDisconnectEvent (string errorMessage)
 	{
@@ -112,8 +94,11 @@ public class AppControllerBehaviour : MonoBehaviour
             Debug.Log("Error during disconnection: " + errorMessage);
             return;
         }
-		searchBleDevicesButton.GetComponent<Button>().enabled = true;
+        searchBleDevicesButton.SetActive(true);
+        disconnectButton.SetActive(false);
         infoMessage.GetComponent<Text>().text = "Device did disconnect.";
+        
+        ConnectionLostEvent?.Invoke();
     }
 
 	void HandleOnBleDidConnectEvent (string errorMessage)
@@ -123,12 +108,12 @@ public class AppControllerBehaviour : MonoBehaviour
             Debug.Log("Error during connection: " + errorMessage);
             return;
         }
-		searchBleDevicesButton.GetComponent<Button>().enabled = true;
+		searchBleDevicesButton.SetActive(false);
+        disconnectButton.SetActive(true);
         infoMessage.GetComponent<Text>().text = "Device did connect.";
-
-        //TODO: Should load a new scene based on the app.
-        lastCommand = resetCommand;
-		BLEController.SendData(resetCommand);
+        
+        ConnectionEstablishedEvent?.Invoke();
+        
 	}
 
 	void HandleBleDevicesListButtonConnectEvent (int buttonIndex)
@@ -147,16 +132,20 @@ public class AppControllerBehaviour : MonoBehaviour
 		infoMessage.GetComponent<Text>().text = initDidSucceed ? "BleFramework initialization: SUCCESS" : ("BleFramework initialization: " + errorMessage);
 		
 		Debug.Log("AppControllerBehavior: HandleOnBleDidInitializeEvent: The BLE module did initialize correctly");
-		searchBleDevicesButton.GetComponent<Button>().enabled = initDidSucceed;
-	}
+        searchBleDevicesButton.SetActive(initDidSucceed);
+    }
 
 	void HandleOnBleDidCompletePeripheralScanEvent (List<object> peripherals, string errorMessage)
 	{
         if (errorMessage != null)
         {
-            searchBleDevicesButton.GetComponent<Button>().enabled = true;
             infoMessage.GetComponent<Text>().text = errorMessage;
         }
+        else
+        {
+            infoMessage.GetComponent<Text>().text = peripherals.Count == 0 ? "No BLE devices found." : "Scan completed.";
+        }
+        searchBleDevicesButton.GetComponent<Button>().enabled = true;   
         DestroyActivityIndicator();
     }
 
@@ -171,11 +160,17 @@ public class AppControllerBehaviour : MonoBehaviour
         infoMessage.GetComponent<Text>().text = "Scanning for devices...";
 
     }
+
+    void HandleDisconnectButtonEvent()
+    {
+        BLEController.Disconnect();
+    }
 	
 	void OnDisable()
 	{
 		SearchBLEDevicesBehaviour.SearchBLEDevicesEvent -= HandleSearchBLEDevicesEvent;
-		BleDeviceConnectButtonBehaviour.BleDevicesListButtonConnectEvent -= HandleBleDevicesListButtonConnectEvent;
+        DisconnectButtonBehaviour.DisconnectButtonEvent -= HandleDisconnectButtonEvent;
+        BleDeviceConnectButtonBehaviour.BleDevicesListButtonConnectEvent -= HandleBleDevicesListButtonConnectEvent;
 		BLEControllerEventHandler.OnBleDidCompletePeripheralScanEvent -= HandleOnBleDidCompletePeripheralScanEvent;
 		BLEControllerEventHandler.OnBleDidInitializeEvent -= HandleOnBleDidInitializeEvent;
 		BLEControllerEventHandler.OnBleDidConnectEvent -= HandleOnBleDidConnectEvent;

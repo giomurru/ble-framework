@@ -194,6 +194,10 @@ NSString *const BLEUnityMessageName_OnBleDidReceiveData = @"OnBleDidReceiveDataM
     [self.ble write:data];
 }
 
+- (void)disconnect {
+    [self.ble disconnect];
+}
+
 #pragma mark Class Methods
 
 +(void)SendUnityMessage:(NSString*)functionName arrayValuesToPass:(NSArray*)arrayValues
@@ -272,6 +276,9 @@ extern "C" {
         return NULL;
     }
     
+    void _Disconnect() {
+        [delegateObject disconnect];
+    }
     bool _ConnectPeripheral(NSString * peripheralID)
     {
         return [delegateObject connectPeripheral:peripheralID];

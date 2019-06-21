@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using System.Collections;
 
 public class SearchBLEDevicesBehaviour : MonoBehaviour 
 {
@@ -8,9 +7,6 @@ public class SearchBLEDevicesBehaviour : MonoBehaviour
 	// Use this for initialization
 	public void ExecuteSearchBLEDevices()
 	{
-		if (SearchBLEDevicesEvent!=null)
-		{
-			SearchBLEDevicesEvent();
-		}
+        SearchBLEDevicesEvent?.Invoke();
 	}
 }
