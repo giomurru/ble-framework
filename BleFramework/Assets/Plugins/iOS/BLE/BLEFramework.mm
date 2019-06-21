@@ -46,13 +46,7 @@ NSString *const BLEUnityMessageName_OnBleDidReceiveData = @"OnBleDidReceiveDataM
 
 
 #pragma mark BLEDelegate methods
-/*
- -(void) bleDidConnect;
- -(void) bleDidDisconnect;
- -(void) bleDidUpdateRSSI:(NSNumber *) rssi;
- -(void) bleDidReceiveData:(unsigned char *) data length:(int) length;
- -(void) bleDidChangeState: (CBManagerState *) state;
- */
+
 -(void) bleDidConnect
 {
     NSLog(@"->Connected");
