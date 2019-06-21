@@ -236,8 +236,13 @@
             {
                 _Disconnect();
             }
+#elif UNITY_ANDROID
+            if (Application.platform == RuntimePlatform.Android)
+            {
+                PluginInstance.Call("_Disconnect");
+            }
 #endif
-        }
+		}
 
 		public static byte[] GetData(int length)
 		{

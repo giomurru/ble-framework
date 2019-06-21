@@ -153,6 +153,7 @@ public class BleFramework
             }
             else if (RBLService.ACTION_GATT_DISCONNECTED.equals(action))
             {
+                _unityActivity.unbindService(_mServiceConnection);
                 _connState = false;
                 _flag = false;
                 ////UnityPlayer.UnitySendMessage("BLEControllerEventHandler", BLEUnityMessageName_OnBleDidDisconnect, "Success");
@@ -468,6 +469,13 @@ public class BleFramework
         }
 
         return false;
+    }
+
+    public void _Disconnect()
+    {
+        if (_mBluetoothLeService != null) {
+            _mBluetoothLeService.disconnect();
+        }
     }
 
     public byte[] _GetData()
