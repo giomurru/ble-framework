@@ -29,6 +29,7 @@ public class AppControllerBehaviour : MonoBehaviour
 	public GameObject searchBleDevicesButton;
     public GameObject disconnectButton;
 	public GameObject infoMessage;
+	public GameObject meteoStationFeed;
 
     
 
@@ -40,7 +41,9 @@ public class AppControllerBehaviour : MonoBehaviour
     {
         searchBleDevicesButton.SetActive(false);
         disconnectButton.SetActive(false);
-    }
+		meteoStationFeed.SetActive(false);
+
+	}
 	
 	void Start () 
 	{
@@ -96,7 +99,8 @@ public class AppControllerBehaviour : MonoBehaviour
         }
         searchBleDevicesButton.SetActive(true);
         disconnectButton.SetActive(false);
-        infoMessage.GetComponent<Text>().text = "Device did disconnect.";
+		meteoStationFeed.SetActive(false);
+		infoMessage.GetComponent<Text>().text = "Device did disconnect.";
         
         ConnectionLostEvent?.Invoke();
     }
@@ -109,7 +113,8 @@ public class AppControllerBehaviour : MonoBehaviour
             return;
         }
 		searchBleDevicesButton.SetActive(false);
-        disconnectButton.SetActive(true);
+		meteoStationFeed.SetActive(true);
+		disconnectButton.SetActive(true);
         infoMessage.GetComponent<Text>().text = "Device did connect.";
         
         ConnectionEstablishedEvent?.Invoke();
