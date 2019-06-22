@@ -93,7 +93,7 @@ public class MeteoStationBehaviour : MonoBehaviour
                     byte temperatureAbsValue = data[2];
                     int percentHumidity = humidity;
                     int temperature = temperatureSign == 0xff ? -temperatureAbsValue : temperatureAbsValue;
-                    string text = "Humidity: " + percentHumidity + "%\nTemperature: " + temperature;
+                    string text = "Humidity: " + percentHumidity + "%\nTemperature: " + temperature + " C";
                     Debug.Log(text);
                     meteoStationBoard.GetComponent<Text>().text = text;
                 }
